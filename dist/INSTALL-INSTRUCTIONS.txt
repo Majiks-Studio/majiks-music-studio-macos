@@ -1,0 +1,63 @@
+MAJIKS STUDIO v1.0.0 - INSTALLATION INSTRUCTIONS
+==================================================
+
+⚠️  IMPORTANT: macOS will block this app because it's not signed.
+    This is normal and safe. Follow these steps:
+
+INSTALLATION (3 Simple Steps):
+-------------------------------
+
+1. REMOVE QUARANTINE FLAG (Required!)
+   Open Terminal and run this command:
+
+   xattr -cr ~/Downloads/MajiksStudio-v1.0.0-macOS.dmg
+
+   (Adjust path if you downloaded to a different location)
+
+2. OPEN THE DMG
+   Double-click the DMG file to mount it
+   A window will open showing the app
+
+3. DRAG TO APPLICATIONS
+   Drag "Majiks Studio.app" to the Applications folder
+   Done! You can now open it from Applications.
+
+QUICK COPY-PASTE COMMANDS:
+--------------------------
+cd ~/Downloads
+xattr -cr MajiksStudio-v1.0.0-macOS.dmg
+open MajiksStudio-v1.0.0-macOS.dmg
+
+WHAT IF I STILL GET "DAMAGED" ERROR?
+-------------------------------------
+If you already tried to open the DMG before removing quarantine:
+
+1. Eject the DMG if mounted
+2. Run: xattr -cr ~/Downloads/MajiksStudio-v1.0.0-macOS.dmg
+3. Mount DMG again
+4. If app still shows damaged: xattr -cr /Applications/Majiks\ Studio.app
+
+AFTER INSTALLATION:
+-------------------
+First launch setup:
+1. Install ACE-Step 1.5 (required):
+   git clone https://github.com/hyperbayse/ACE-Step-1.5.git ~/ACE-Step-1.5
+
+2. Open Majiks Studio from Applications
+3. Enter your license key (format: MS1-xxxxxx-xxxxxx)
+4. Configure LLM provider in Settings
+5. Start creating music!
+
+SYSTEM REQUIREMENTS:
+--------------------
+• macOS 14.0 (Sonoma) or later
+• Apple Silicon (M1/M2/M3) or Intel Mac
+• 16GB RAM recommended
+• ACE-Step 1.5 for music generation
+
+SUPPORT:
+--------
+Email: support@magicunicorn.tech
+Website: https://magicunicorn.tech/majiks-studio
+
+Copyright © 2026 Magic Unicorn Unconventional Technology & Stuff Inc.

@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "name": "Generic MIDI Controller",
+  "device": { "namePatterns": [] },
+  "author": "Magic Unicorn",
+  "tested": false,
+  "unsupportedReason": null,
+  "comment": "Bare-bones map for any generic MIDI controller. namePatterns is empty so this map never auto-loads. Pin it to your port in Settings > MIDI, then relearn the controls that differ from this layout.",
+  "bindings": [
+    {
+      "id": "transport-toggle",
+      "label": "Play / Stop toggle",
+      "match": { "type": "noteOn", "channel": 0, "number": 60 },
+      "target": { "kind": "builtin", "name": "transport.toggle" },
+      "enabled": true,
+      "comment": "Middle C — pin this map to your port, then relearn the controls that differ"
+    },
+    {
+      "id": "transport-stop",
+      "label": "Stop",
+      "match": { "type": "noteOn", "channel": 0, "number": 62 },
+      "target": { "kind": "command", "name": "transport.stop" },
+      "enabled": true,
+      "comment": "D4"
+    },
+    {
+      "id": "transport-play",
+      "label": "Play",
+      "match": { "type": "noteOn", "channel": 0, "number": 64 },
+      "target": { "kind": "command", "name": "transport.play" },
+      "enabled": true,
+      "comment": "E4"
+    },
+    {
+      "id": "master-gain",
+      "label": "Master volume (CC)",
+      "match": { "type": "controlChange", "channel": 0, "number": 7 },
+      "target": { "kind": "command", "name": "mix.master.gain", "params": { "gainDb": "$value" } },
+      "valueMap": {
+        "inputMin": 0,
+        "inputMax": 127,
+        "outputMin": -60,
+        "outputMax": 12,
+        "curve": "linear"
+      },
+      "enabled": true,
+      "comment": "CC 7 — master gain, 0..127 -> -60dB..+12dB"
+    },
+    {
+      "id": "track-1-gain",
+      "label": "Track 1 gain (CC)",
+      "match": { "type": "controlChange", "channel": 0, "number": 21 },
+      "target": { "kind": "command", "name": "mix.gain", "params": { "trackId": "$track:0", "gainDb": "$value" } },
+      "valueMap": {
+        "inputMin": 0,
+        "inputMax": 127,
+        "outputMin": -60,
+        "outputMax": 12,
+        "curve": "linear"
+      },
+      "enabled": true,
+      "comment": "CC 21 — track 1 fader"
+    }
+  ]
+}

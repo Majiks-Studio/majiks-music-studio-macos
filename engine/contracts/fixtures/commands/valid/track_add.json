@@ -1,0 +1,24 @@
+{
+  "id": "600000000000000000000001YJ",
+  "ts": "2026-07-11T20:04:11Z",
+  "actor": {
+    "kind": "user",
+    "name": "aaron"
+  },
+  "name": "track.add",
+  "params": {
+    "trackId": "trk_pad",
+    "name": "Pad",
+    "index": 3
+  },
+  "inverse": {
+    "name": "track.remove",
+    "params": {
+      "trackId": "trk_pad"
+    }
+  },
+  "result": {
+    "ok": true
+  },
+  "hash": "011542698aed08d01689f21381d9a86235dd9855c0107f7dc9a405d24adb22d1"
+}

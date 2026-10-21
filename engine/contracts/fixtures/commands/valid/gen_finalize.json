@@ -1,0 +1,26 @@
+{
+  "id": "600000000000000000000001YR",
+  "ts": "2026-07-11T20:04:11Z",
+  "actor": {
+    "kind": "user",
+    "name": "aaron"
+  },
+  "name": "gen.finalize",
+  "params": {
+    "requestId": "600000000000000000000008SA",
+    "draftTakeId": "take_drums_draft_1",
+    "targetQualityRung": "full",
+    "request": {
+      "requestId": "500000000000000000000008S9",
+      "sourceAudioRef": "clip_drums_1",
+      "regionStartSeconds": 4,
+      "regionEndSeconds": 6,
+      "instruction": "bigger, more aggressive drums in this section"
+    }
+  },
+  "inverse": null,
+  "result": {
+    "ok": true
+  },
+  "hash": "458d3da28f6c287c42861da157425a6673b95adc208e1f2910432c1ef831cc4a"
+}

@@ -1,0 +1,11 @@
+{
+  "hash_algo": "sha256",
+  "files": {
+    "sweep_48k_stereo.wav": "bd3babe11271dd044c71973d0623564b71e05ec7757be453399ac7990ca80d3e",
+    "sweep_44k1_stereo.wav": "0f5dfed4bf52a559b7cbc89bc70eab0921340f7ee5ab72ad43cbdfc5490df059",
+    "click_92bpm_48k_stereo.wav": "5ac1a7a69a9c5cd5977acd550bd77bc6c60c4ce4acccc61d56980d133b575765",
+    "click_120bpm_48k_stereo.wav": "f558603b42224ffef88562797c6be57649ddb302115ccf2af1bb17d572f3328d",
+    "click_174bpm_48k_stereo.wav": "4595f153f3685eb321abf5ed2909ac3a9c24d3a21c8cf503603ae03720e7b762",
+    "tone_440_48k_mono.wav": "e53c4b6a2023752fe87057f1ea4b5e07bbd4b5585bdcb945779cd7a59220511d"
+  }
+}

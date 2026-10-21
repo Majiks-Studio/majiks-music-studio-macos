@@ -1,0 +1,59 @@
+[package]
+name = "media"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+publish = false
+description = "Decode, sample-rate conversion, waveform peak tiles, and audio analysis (tempo, key, loudness) for Majik's Music Studio."
+
+# Member of ../Cargo.toml (folded into the workspace at Phase 1 integration).
+[lib]
+name = "media"
+path = "src/lib.rs"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+# Content hashing (blake3::hash over bytes) is pure Rust and wasm32-safe;
+# kept as an unconditional dependency (not gated behind `native`) so
+# `hash::hash_bytes` is available to the pure-math / wasm build too.
+blake3 = "1"
+# Onset/chroma spectral analysis. Pure Rust; ships a wasm-simd backend for
+# wasm32-unknown-unknown in addition to native SIMD, with a scalar fallback,
+# so this is safe unconditional too (see MAPPING.md "wasm32 feature split").
+rustfft = "6.4"
+
+# Native-only: file decode, sample-rate conversion, loudness metering, and
+# the threaded/cancel-safe tile job + disk cache all need std::fs / std::io
+# / std::thread or (for symphonia's container demuxers) real files. None of
+# this is available on wasm32-unknown-unknown, so it's gated behind the
+# `native` feature (default-on) rather than compiled unconditionally.
+symphonia = { version = "0.6", default-features = false, features = ["wav", "flac", "mp3", "aac", "alac", "isomp4", "ogg", "vorbis", "pcm"], optional = true }
+rubato = { version = "0.15", optional = true }
+ebur128 = { version = "0.1", optional = true }
+crossbeam-channel = { version = "0.5", optional = true }
+
+[dev-dependencies]
+# WAV fixture authoring for tests only (click tracks, rate-stamping probe
+# files). The shipped decode path is symphonia-only, per the lane brief
+# ("ONE decode service").
+hound = "3.5"
+
+[features]
+default = ["native"]
+# Decode (symphonia+rubato), loudness (ebur128), and the threaded tile
+# job + disk cache (crossbeam-channel, std::fs, std::thread). Everything
+# else (tempo, key, waveform peak min/max, the FFT helper, in-memory blake3
+# hashing) has no feature gate and compiles under any target.
+native = ["dep:symphonia", "dep:rubato", "dep:ebur128", "dep:crossbeam-channel"]
+# Empty marker feature: documents the wasm32 build command
+# (`cargo build --target wasm32-unknown-unknown --no-default-features --features wasm`)
+# without requiring anyone to remember `--no-default-features` means
+# something specific here. See docs/evidence/l3-media-analysis.md.
+wasm = []
+
+[[example]]
+name = "analyze"
+path = "examples/analyze.rs"
+required-features = ["native"]

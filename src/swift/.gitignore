@@ -1,0 +1,11 @@
+# The engine xcframework is a BUILD PRODUCT: rebuild it with
+# scripts/build-engine.sh (the script + the generated Swift bindings ARE
+# committed). Keeps the repo lean; the .a slices are large.
+MajiksEngine.xcframework/
+
+# Swift / Xcode build output.
+.build/
+DerivedData/
+*.xcodeproj
+*.xcworkspace
+build/

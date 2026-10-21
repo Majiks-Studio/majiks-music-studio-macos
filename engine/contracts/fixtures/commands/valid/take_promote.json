@@ -1,0 +1,23 @@
+{
+  "id": "700000000000000000000001YS",
+  "ts": "2026-07-11T20:04:11Z",
+  "actor": {
+    "kind": "agent",
+    "name": "sarge-copilot"
+  },
+  "name": "take.promote",
+  "params": {
+    "takeId": "take_drums_draft_1",
+    "targetClipId": "clip_drums_1"
+  },
+  "inverse": {
+    "name": "take.discard",
+    "params": {
+      "takeId": "take_drums_draft_1"
+    }
+  },
+  "result": {
+    "ok": true
+  },
+  "hash": "2ff687a0d5f6c50a5e2d115c27f9dda3590a3bc7c56db8c0d75433042ef61a85"
+}

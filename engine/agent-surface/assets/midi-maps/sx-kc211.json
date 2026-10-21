@@ -1,0 +1,140 @@
+{
+  "version": 1,
+  "name": "SX-KC211 (Studio)",
+  "device": { "namePatterns": ["kc211", "usb midi interface"] },
+  "author": "Magic Unicorn",
+  "tested": false,
+  "sourceUrl": "https://git.unicorncommander.ai/MajiksStudio/majiks-music-studio-pro/-/blob/main/engine/agent-surface/assets/midi-maps/sx-kc211.json",
+  "unsupportedReason": null,
+  "comment": "Port-name match: the unit reaches the Mac via a USB-DIN cable which enumerates as a generic 'USB MIDI Interface'. Any cable with that name gets this map. The SX-KC211's ONLY MIDI surface is its 61 keys (live-verified 2026-07-09; Party Pads, knobs, and panel buttons transmit nothing). tested=false until Aaron confirms on hardware and flips to true.",
+  "bindings": [
+    {
+      "id": "transport-toggle",
+      "label": "Play / Stop toggle",
+      "match": { "type": "noteOn", "channel": 0, "number": 36 },
+      "target": { "kind": "builtin", "name": "transport.toggle" },
+      "enabled": true,
+      "comment": "C2 — bottom key"
+    },
+    {
+      "id": "record-toggle",
+      "label": "Record toggle",
+      "match": { "type": "noteOn", "channel": 0, "number": 37 },
+      "target": { "kind": "builtin", "name": "record.toggle" },
+      "enabled": true,
+      "comment": "C#2"
+    },
+    {
+      "id": "transport-seek-start",
+      "label": "Seek to start",
+      "match": { "type": "noteOn", "channel": 0, "number": 38 },
+      "target": { "kind": "command", "name": "transport.seek", "params": { "positionTicks": 0 } },
+      "enabled": true,
+      "comment": "D2 — return to start"
+    },
+    {
+      "id": "metronome-toggle",
+      "label": "Metronome toggle",
+      "match": { "type": "noteOn", "channel": 0, "number": 39 },
+      "target": { "kind": "builtin", "name": "metronome.toggle" },
+      "enabled": true,
+      "comment": "D#2"
+    },
+    {
+      "id": "undo",
+      "label": "Undo",
+      "match": { "type": "noteOn", "channel": 0, "number": 40 },
+      "target": { "kind": "builtin", "name": "undo" },
+      "enabled": true,
+      "comment": "E2"
+    },
+    {
+      "id": "redo",
+      "label": "Redo",
+      "match": { "type": "noteOn", "channel": 0, "number": 41 },
+      "target": { "kind": "builtin", "name": "redo" },
+      "enabled": true,
+      "comment": "F2"
+    },
+    {
+      "id": "transport-loop-clear",
+      "label": "Loop clear",
+      "match": { "type": "noteOn", "channel": 0, "number": 42 },
+      "target": { "kind": "command", "name": "transport.loop.clear" },
+      "enabled": true,
+      "comment": "F#2"
+    },
+    {
+      "id": "transport-stop",
+      "label": "Hard stop",
+      "match": { "type": "noteOn", "channel": 0, "number": 43 },
+      "target": { "kind": "command", "name": "transport.stop" },
+      "enabled": true,
+      "comment": "G2"
+    },
+    {
+      "id": "t1-gain-nudge-down",
+      "label": "Track 1 gain -1 dB",
+      "match": { "type": "noteOn", "channel": 0, "number": 48 },
+      "target": { "kind": "builtin", "name": "mix.gain.nudge", "params": { "trackId": "$track:0", "deltaDb": -1 } },
+      "enabled": true,
+      "comment": "C3 — track 1 nudge -1 dB"
+    },
+    {
+      "id": "t1-gain-nudge-up",
+      "label": "Track 1 gain +1 dB",
+      "match": { "type": "noteOn", "channel": 0, "number": 50 },
+      "target": { "kind": "builtin", "name": "mix.gain.nudge", "params": { "trackId": "$track:0", "deltaDb": 1 } },
+      "enabled": true,
+      "comment": "D3 — track 1 nudge +1 dB"
+    },
+    {
+      "id": "t2-gain-nudge-down",
+      "label": "Track 2 gain -1 dB",
+      "match": { "type": "noteOn", "channel": 0, "number": 52 },
+      "target": { "kind": "builtin", "name": "mix.gain.nudge", "params": { "trackId": "$track:1", "deltaDb": -1 } },
+      "enabled": true,
+      "comment": "E3 — track 2 nudge -1 dB"
+    },
+    {
+      "id": "t2-gain-nudge-up",
+      "label": "Track 2 gain +1 dB",
+      "match": { "type": "noteOn", "channel": 0, "number": 53 },
+      "target": { "kind": "builtin", "name": "mix.gain.nudge", "params": { "trackId": "$track:1", "deltaDb": 1 } },
+      "enabled": true,
+      "comment": "F3 — track 2 nudge +1 dB"
+    },
+    {
+      "id": "t3-gain-nudge-down",
+      "label": "Track 3 gain -1 dB",
+      "match": { "type": "noteOn", "channel": 0, "number": 55 },
+      "target": { "kind": "builtin", "name": "mix.gain.nudge", "params": { "trackId": "$track:2", "deltaDb": -1 } },
+      "enabled": true,
+      "comment": "G3 — track 3 nudge -1 dB"
+    },
+    {
+      "id": "t3-gain-nudge-up",
+      "label": "Track 3 gain +1 dB",
+      "match": { "type": "noteOn", "channel": 0, "number": 57 },
+      "target": { "kind": "builtin", "name": "mix.gain.nudge", "params": { "trackId": "$track:2", "deltaDb": 1 } },
+      "enabled": true,
+      "comment": "A3 — track 3 nudge +1 dB"
+    },
+    {
+      "id": "sterling-revise-tighten",
+      "label": "Sterling: tighten timing",
+      "match": { "type": "noteOn", "channel": 0, "number": 60 },
+      "target": { "kind": "sterling", "instruction": "Revise the selected region. Keep the arrangement, tighten the timing." },
+      "enabled": true,
+      "comment": "C4 — note 60"
+    },
+    {
+      "id": "sterling-add-layer",
+      "label": "Sterling: add a layer",
+      "match": { "type": "noteOn", "channel": 0, "number": 62 },
+      "target": { "kind": "sterling", "instruction": "Add a complementary layer that fits the current section." },
+      "enabled": true,
+      "comment": "D4 — note 62"
+    }
+  ]
+}

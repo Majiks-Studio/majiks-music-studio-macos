@@ -1,0 +1,150 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="560" viewBox="0 0 980 560" font-family="-apple-system, 'SF Pro Text', Helvetica, sans-serif">
+  <defs>
+    <linearGradient id="shimmer" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FF5FA2"/>
+      <stop offset="0.5" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#2BD9C7"/>
+    </linearGradient>
+  </defs>
+  <rect width="980" height="560" fill="#0F0F17"/>
+
+  <!-- ===================== LEFT: Takes browser rail ===================== -->
+  <rect x="16" y="16" width="300" height="528" rx="10" fill="#181822" stroke="#232331"/>
+  <text x="32" y="42" fill="#5B5B74" font-size="10" font-weight="700" letter-spacing="1.4">BROWSER</text>
+
+  <!-- tabs -->
+  <rect x="28" y="52" width="60" height="22" rx="6" fill="#20202E"/>
+  <text x="40" y="67" fill="#8F8FA8" font-size="12" font-weight="600">Songs</text>
+  <rect x="92" y="52" width="56" height="22" rx="6" fill="#8B5CF6" fill-opacity="0.20"/>
+  <text x="103" y="67" fill="#E9E9F4" font-size="12" font-weight="700">Takes</text>
+  <text x="156" y="67" fill="#8F8FA8" font-size="12" font-weight="600">Stems</text>
+
+  <!-- filter field -->
+  <rect x="28" y="84" width="276" height="26" rx="7" fill="#0F0F17" stroke="#2A2A3A"/>
+  <circle cx="42" cy="97" r="4.5" fill="none" stroke="#5B5B74" stroke-width="1.4"/>
+  <line x1="45" y1="100" x2="48" y2="103" stroke="#5B5B74" stroke-width="1.4"/>
+  <text x="56" y="101" fill="#5B5B74" font-size="11">Filter takes</text>
+
+  <!-- filter chips -->
+  <rect x="28" y="118" width="92" height="20" rx="10" fill="#8B5CF6" fill-opacity="0.22" stroke="#8B5CF6"/>
+  <text x="41" y="132" fill="#E9E9F4" font-size="9.5" font-weight="700">Auditionable</text>
+  <rect x="126" y="118" width="80" height="20" rx="10" fill="none" stroke="#2A2A3A"/>
+  <text x="139" y="132" fill="#8F8FA8" font-size="9.5" font-weight="700">This region</text>
+
+  <!-- take rows -->
+  <!-- row: revise drums -->
+  <rect x="28" y="148" width="276" height="42" rx="7" fill="#20202E" fill-opacity="0.5" stroke="#232331"/>
+  <rect x="38" y="160" width="6" height="6" rx="2" fill="#FFB020"/>
+  <text x="52" y="164" fill="#E9E9F4" font-size="11" font-weight="600">strip drums to half-time, darker</text>
+  <text x="52" y="179" fill="#5B5B74" font-size="9" font-family="'SF Mono', monospace">Revise · drums · seed 34612 · turbo · bars 33-48</text>
+
+  <!-- row: revise other -->
+  <rect x="28" y="196" width="276" height="42" rx="7" fill="#20202E" fill-opacity="0.5" stroke="#232331"/>
+  <rect x="38" y="208" width="6" height="6" rx="2" fill="#2BD9C7"/>
+  <text x="52" y="212" fill="#E9E9F4" font-size="11" font-weight="600">warmer analog pads</text>
+  <text x="52" y="227" fill="#5B5B74" font-size="9" font-family="'SF Mono', monospace">Revise · other · seed 03501 · turbo · bars 33-48</text>
+
+  <!-- row: layer -->
+  <rect x="28" y="244" width="276" height="42" rx="7" fill="#20202E" fill-opacity="0.5" stroke="#232331"/>
+  <rect x="38" y="256" width="6" height="6" rx="2" fill="#2BD9C7"/>
+  <text x="52" y="260" fill="#E9E9F4" font-size="11" font-weight="600">sax lead answering the vocal</text>
+  <text x="52" y="275" fill="#5B5B74" font-size="9" font-family="'SF Mono', monospace">Layer · other · seed 77120 · bars 17-24</text>
+
+  <!-- row: in-mix (promoted) -->
+  <rect x="28" y="292" width="276" height="42" rx="7" fill="#20202E" fill-opacity="0.5" stroke="#232331"/>
+  <rect x="38" y="304" width="6" height="6" rx="2" fill="#FFB020"/>
+  <text x="52" y="308" fill="#E9E9F4" font-size="11" font-weight="600">half-time, darker (take 2)</text>
+  <text x="52" y="323" fill="#5B5B74" font-size="9" font-family="'SF Mono', monospace">Revise · drums · committed</text>
+  <rect x="256" y="299" width="40" height="13" rx="3" fill="#59DB8C" fill-opacity="0.16"/>
+  <text x="261" y="309" fill="#59DB8C" font-size="7.5" font-weight="700" letter-spacing="0.4">IN MIX</text>
+
+  <!-- row: landed song (provenance, shown only when Auditionable is off) -->
+  <rect x="28" y="340" width="276" height="42" rx="7" fill="#20202E" fill-opacity="0.35" stroke="#232331" stroke-dasharray="3 3"/>
+  <rect x="38" y="352" width="6" height="6" rx="2" fill="#8A93A6"/>
+  <text x="52" y="356" fill="#8F8FA8" font-size="11" font-weight="600">neon-soaked synthwave getaway</text>
+  <text x="52" y="371" fill="#5B5B74" font-size="9" font-family="'SF Mono', monospace">Landed song · acestep-v15 · provenance</text>
+  <rect x="252" y="347" width="44" height="13" rx="3" fill="#4DCCFA" fill-opacity="0.16"/>
+  <text x="257" y="357" fill="#4DCCFA" font-size="7.5" font-weight="700" letter-spacing="0.4">SOURCE</text>
+
+  <!-- row: purged (offline) -->
+  <rect x="28" y="388" width="276" height="42" rx="7" fill="#20202E" fill-opacity="0.35" stroke="#232331"/>
+  <rect x="38" y="400" width="6" height="6" rx="2" fill="#8A93A6" opacity="0.4"/>
+  <text x="52" y="404" fill="#5B5B74" font-size="11" font-weight="600">darker, more space (take 3)</text>
+  <text x="52" y="419" fill="#5B5B74" font-size="9" font-family="'SF Mono', monospace">Revise · bass · seed 88104 · bars 33-48</text>
+  <rect x="252" y="395" width="44" height="13" rx="3" fill="#5B5B74" fill-opacity="0.16"/>
+  <text x="257" y="405" fill="#5B5B74" font-size="7.5" font-weight="700" letter-spacing="0.4">PURGED</text>
+
+  <!-- purge button -->
+  <rect x="28" y="440" width="276" height="28" rx="7" fill="#20202E" stroke="#2A2A3A"/>
+  <text x="44" y="458" fill="#8F8FA8" font-size="10" font-weight="600">🗑  Purge unused takes</text>
+
+  <text x="28" y="492" fill="#5B5B74" font-size="9.5">Click a take to preview it in place. Drag onto</text>
+  <text x="28" y="506" fill="#5B5B74" font-size="9.5">a clip to use it there. "More like this" re-rolls.</text>
+
+  <!-- ===================== RIGHT: audition + per-stem mix ===================== -->
+  <rect x="640" y="16" width="324" height="528" rx="10" fill="#181822" stroke="#232331"/>
+  <text x="656" y="42" fill="#5B5B74" font-size="10" font-weight="700" letter-spacing="1">AUDITION BARS 33-48</text>
+  <text x="880" y="42" fill="#5B5B74" font-size="9">1-9 pick, A original</text>
+
+  <!-- audition take list -->
+  <g font-size="12">
+    <rect x="656" y="54" width="292" height="26" rx="8" fill="#20202E" stroke="#2A2A3A"/>
+    <rect x="662" y="59" width="18" height="16" rx="5" fill="#20202E" stroke="#2A2A3A"/>
+    <text x="666" y="71" fill="#8F8FA8" font-size="10" font-weight="700">A</text>
+    <text x="690" y="71" fill="#8F8FA8">Original</text>
+
+    <rect x="656" y="84" width="292" height="26" rx="8" fill="#8B5CF6" fill-opacity="0.14" stroke="#8B5CF6"/>
+    <rect x="662" y="89" width="18" height="16" rx="5" fill="#8B5CF6"/>
+    <text x="667" y="101" fill="#FFFFFF" font-size="10" font-weight="700">1</text>
+    <text x="690" y="101" fill="#E9E9F4" font-weight="700">Take 1</text>
+    <text x="918" y="101" fill="#2BD9C7" font-size="11">〜</text>
+
+    <rect x="656" y="114" width="292" height="26" rx="8" fill="#20202E" stroke="#2A2A3A"/>
+    <rect x="662" y="119" width="18" height="16" rx="5" fill="#20202E"/>
+    <text x="666" y="131" fill="#8F8FA8" font-size="10" font-weight="700">2</text>
+    <text x="690" y="131" fill="#8F8FA8">Take 2</text>
+
+    <rect x="656" y="144" width="292" height="26" rx="8" fill="#20202E" stroke="#2A2A3A"/>
+    <rect x="662" y="149" width="18" height="16" rx="5" fill="#20202E"/>
+    <text x="666" y="161" fill="#8F8FA8" font-size="10" font-weight="700">3</text>
+    <text x="690" y="161" fill="#8F8FA8">Take 3</text>
+  </g>
+
+  <!-- per-stem mix panel -->
+  <rect x="656" y="182" width="292" height="118" rx="8" fill="#20202E" stroke="#2A2A3A"/>
+  <text x="668" y="202" fill="#5B5B74" font-size="9" font-weight="700" letter-spacing="1">PER-STEM MIX</text>
+
+  <!-- drums row: take 1 chosen -->
+  <rect x="668" y="212" width="6" height="6" rx="2" fill="#FFB020"/>
+  <text x="682" y="218" fill="#8F8FA8" font-size="11">Drums</text>
+  <rect x="852" y="208" width="18" height="18" rx="5" fill="#FFB020" stroke="#FFB020"/>
+  <text x="857" y="221" fill="#FFFFFF" font-size="10" font-weight="700">1</text>
+  <rect x="874" y="208" width="18" height="18" rx="5" fill="#0F0F17" stroke="#2A2A3A"/>
+  <text x="879" y="221" fill="#8F8FA8" font-size="10" font-weight="700">2</text>
+  <rect x="896" y="208" width="18" height="18" rx="5" fill="#0F0F17" stroke="#2A2A3A"/>
+  <text x="901" y="221" fill="#8F8FA8" font-size="10" font-weight="700">3</text>
+
+  <!-- other row: take 3 chosen (a real mix across variants) -->
+  <rect x="668" y="242" width="6" height="6" rx="2" fill="#2BD9C7"/>
+  <text x="682" y="248" fill="#8F8FA8" font-size="11">Other</text>
+  <rect x="852" y="238" width="18" height="18" rx="5" fill="#0F0F17" stroke="#2A2A3A"/>
+  <text x="857" y="251" fill="#8F8FA8" font-size="10" font-weight="700">1</text>
+  <rect x="874" y="238" width="18" height="18" rx="5" fill="#0F0F17" stroke="#2A2A3A"/>
+  <text x="879" y="251" fill="#8F8FA8" font-size="10" font-weight="700">2</text>
+  <rect x="896" y="238" width="18" height="18" rx="5" fill="#2BD9C7" stroke="#2BD9C7"/>
+  <text x="901" y="251" fill="#FFFFFF" font-size="10" font-weight="700">3</text>
+
+  <text x="668" y="286" fill="#5B5B74" font-size="9">Pick a take per stem, then Commit. Drums from take 1, other from take 3.</text>
+
+  <!-- discard / commit -->
+  <rect x="656" y="312" width="140" height="30" rx="8" fill="#20202E" stroke="#2A2A3A"/>
+  <text x="700" y="331" fill="#8F8FA8" font-size="12" font-weight="700">Discard</text>
+  <rect x="808" y="312" width="140" height="30" rx="8" fill="url(#shimmer)"/>
+  <text x="857" y="331" fill="#FFFFFF" font-size="12" font-weight="700">Commit</text>
+
+  <text x="656" y="360" fill="#5B5B74" font-size="9.5">Commit writes each stem's chosen take in place with a</text>
+  <text x="656" y="373" fill="#5B5B74" font-size="9.5">20 ms crossfade, as one undo step. Drives take.auditionMix</text>
+  <text x="656" y="386" fill="#5B5B74" font-size="9.5">while auditioning so an agent hears the same mix.</text>
+
+  <text x="16" y="552" fill="#3A3A55" font-size="9">Majik's Music Studio · Takes browser + per-stem mixing (L10). Rendering of the shipped SwiftUI layout; tokens + copy are the shipped ones.</text>
+</svg>

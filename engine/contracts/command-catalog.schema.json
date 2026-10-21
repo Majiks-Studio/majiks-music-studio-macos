@@ -1,0 +1,241 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://majiks-music-studio-pro/contracts/command-catalog.schema.json",
+  "title": "Majik's Studio command catalog + command envelope schema v1",
+  "description": "Two schemas in one file, selected by $ref fragment: #/$defs/catalogDocument validates command-catalog.v1.json itself; #/$defs/commandEnvelope validates one line of journal.jsonl (or an in-flight command on the bus before it is journaled). Per-command params are NOT cross-referenced from this file: a command envelope's params are valid only if they also satisfy the paramsSchema registered for that command's name in command-catalog.v1.json. Conformance tooling performs that second, catalog-driven lookup; this file only fixes the shape every envelope must have regardless of which command it carries.",
+
+  "$defs": {
+
+    "ulid": {
+      "type": "string",
+      "description": "Crockford base32, 26 chars, first char restricted to 0-7 so the 48-bit timestamp field cannot overflow. Uppercase only (ULID canonical form).",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+
+    "utcTimestamp": {
+      "type": "string",
+      "description": "UTC, Zulu-suffixed, second or sub-second precision. Offsets other than Z are not accepted in the journal: every ts is normalized to UTC before hashing.",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,6})?Z$"
+    },
+
+    "commandName": {
+      "type": "string",
+      "description": "dotted.command.name, lowercase segments separated by '.'. Structural check only; whether the name exists in the catalog is a conformance-test lookup, not a schema constraint (keeps this schema independent of catalog contents).",
+      "pattern": "^[a-z][a-zA-Z0-9]*(\\.[a-z][a-zA-Z0-9]*)+$"
+    },
+
+    "actor": {
+      "type": "object",
+      "required": ["kind", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["user", "agent", "api", "copilot", "system"]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Free-form identity within kind, e.g. a username, an agent id, an API client id, or 'engine' for system-authored entries such as gen.landed."
+        }
+      }
+    },
+
+    "inverseRef": {
+      "description": "The inverse of a journaled command. null means the catalog marks this command undoable:false (transport-class or explicitly non-undoable, e.g. export.*, gen.* requests). When non-null, name+params must themselves be a valid command envelope payload (recursively checked by conformance tooling, not by this schema, to avoid infinite $ref recursion here).",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["name", "params"],
+          "additionalProperties": false,
+          "properties": {
+            "name": { "$ref": "#/$defs/commandName" },
+            "params": { "type": "object" }
+          }
+        }
+      ]
+    },
+
+    "resultRef": {
+      "type": "object",
+      "required": ["ok"],
+      "additionalProperties": false,
+      "properties": {
+        "ok": { "type": "boolean" },
+        "error": {
+          "type": "object",
+          "required": ["code", "message"],
+          "additionalProperties": true,
+          "properties": {
+            "code": { "type": "string", "minLength": 1 },
+            "message": { "type": "string", "minLength": 1 },
+            "fix": { "type": "string" },
+            "detail": { "type": "string" },
+            "step": { "type": "string" }
+          }
+        }
+      },
+      "if": { "properties": { "ok": { "const": false } } },
+      "then": { "required": ["ok", "error"] }
+    },
+
+    "commandEnvelope": {
+      "type": "object",
+      "description": "One line of journal.jsonl (the 'hash' field is present) OR a command in flight on the bus before journaling (the 'hash' field is absent, since it cannot be computed before the entry's position in the chain is known). Field order shown here is documentation order, not a constraint: canonicalization for hashing is defined in README.md and does not depend on on-disk key order.",
+      "required": ["id", "ts", "actor", "name", "params", "inverse", "result"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/ulid" },
+        "ts": { "$ref": "#/$defs/utcTimestamp" },
+        "actor": { "$ref": "#/$defs/actor" },
+        "name": { "$ref": "#/$defs/commandName" },
+        "params": { "type": "object" },
+        "inverse": { "$ref": "#/$defs/inverseRef" },
+        "result": { "$ref": "#/$defs/resultRef" },
+        "hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "blake3 hex digest. Present once the entry is written to journal.jsonl; see README.md 'Canonicalization and the hash chain' for the exact byte sequence hashed."
+        }
+      }
+    },
+
+    "paramsSchemaFragment": {
+      "description": "What a per-command paramsSchema entry in command-catalog.v1.json must itself look like: a self-contained JSON Schema object (no $ref out to this file or to command-catalog.v1.json's own root, so it can be validated standalone by conformance tooling without a multi-document resolver).",
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "object" },
+        "properties": { "type": "object" },
+        "required": { "type": "array", "items": { "type": "string" } },
+        "additionalProperties": { "type": "boolean" }
+        ,"oneOf": { "type": "array" }
+      }
+    },
+
+    "inverseRule": {
+      "type": "object",
+      "required": ["mode"],
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["none", "self", "explicit"],
+          "description": "none: command is undoable:false, envelope.inverse must be null. self: the inverse is the same command name, applied to the pre-mutation snapshot of the same fields (e.g. clip.move's inverse is another clip.move). explicit: the inverse is a different named command (e.g. track.add's inverse is track.remove)."
+        },
+        "name": {
+          "type": "string",
+          "description": "Required when mode is 'explicit'; the catalog command name used as the inverse."
+        }
+      },
+      "if": { "properties": { "mode": { "const": "explicit" } } },
+      "then": { "required": ["mode", "name"] }
+    },
+
+    "commandEntry": {
+      "type": "object",
+      "required": ["name", "category", "journaled", "undoable", "inverseRule", "paramsSchema", "description"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "$ref": "#/$defs/commandName" },
+        "category": {
+          "type": "string",
+          "enum": ["project", "transport", "track", "clip", "automation", "mixer", "midi", "routing", "gen", "io", "session", "txn"]
+        },
+        "journaled": {
+          "type": "boolean",
+          "description": "Whether an accepted invocation of this command appends a line to journal.jsonl."
+        },
+        "undoable": {
+          "type": "boolean",
+          "description": "Whether this command has a meaningful inverse that undo/redo can apply."
+        },
+        "async": {
+          "type": "boolean",
+          "default": false,
+          "description": "True for gen.* request commands: the journaled entry records the request; a separate system-authored gen.landed entry (actor.kind=system) records completion."
+        },
+        "systemAuthored": {
+          "type": "boolean",
+          "default": false,
+          "description": "True only for gen.landed: never issued by a user/agent/api/copilot actor, only written by the engine when an async gen job reaches a terminal state."
+        },
+        "flag": {
+          "type": "string",
+          "description": "Feature flag gating this command in v1, e.g. 'v1.1' or 'L19'. Absent means shipped unconditionally in v1."
+        },
+        "inverseRule": { "$ref": "#/$defs/inverseRule" },
+        "inverseShape": {
+          "type": "string",
+          "enum": ["none", "self", "explicit", "multi"],
+          "description": "Catalog v2 annotation: the SHAPE of the undo sequence the engine actually produces, as distinct from inverseRule which names the declared inverse command. 'multi' means the runtime undo MAY be a sequence of more than one command, because restoring the pre-state needs more than the declared inverse can express (clip.split always; track.remove/clip.remove/autolane.clear/route.node.remove whenever there is non-default state to restore) — the catalog HINT stays the single declared name either way. Purely descriptive: no runtime reads it for semantics, and timeline-core/tests/inverse_shape.rs asserts it matches what apply.rs returns."
+        },
+        "nonUndoableReason": {
+          "type": "string",
+          "description": "Required prose when undoable is false and category is not transport, explaining why (mirrors 02-ARCHITECTURE.md section 4's acceptance hook: 'every command has an inverse or is explicitly journal-tagged non-undoable')."
+        },
+        "paramsSchema": { "$ref": "#/$defs/paramsSchemaFragment" },
+        "description": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "undoable": { "const": true } } },
+          "then": {
+            "properties": { "inverseRule": { "properties": { "mode": { "enum": ["self", "explicit"] } } } }
+          }
+        },
+        {
+          "if": { "properties": { "undoable": { "const": false } } },
+          "then": {
+            "properties": { "inverseRule": { "properties": { "mode": { "const": "none" } } } }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "undoable": { "const": false },
+              "category": { "not": { "const": "transport" } }
+            },
+            "required": ["undoable", "category"]
+          },
+          "then": { "required": ["nonUndoableReason"] }
+        }
+      ]
+    },
+
+    "readSurfaceEntry": {
+      "type": "object",
+      "required": ["name", "description", "responseSchema"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "params": { "type": "object" },
+        "responseSchema": { "$ref": "#/$defs/paramsSchemaFragment" }
+      }
+    },
+
+    "catalogDocument": {
+      "type": "object",
+      "required": ["catalogVersion", "generatedFrom", "commands", "readSurface"],
+      "additionalProperties": false,
+      "properties": {
+        "catalogVersion": { "enum": [1, 1.1, "2.0"] },
+        "generatedFrom": { "type": "string", "minLength": 1 },
+        "commands": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/commandEntry" }
+        },
+        "readSurface": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/readSurfaceEntry" }
+        }
+      }
+    }
+  },
+
+  "$ref": "#/$defs/catalogDocument"
+}

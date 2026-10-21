@@ -1,0 +1,258 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://majiks-music-studio-pro/contracts/project.schema.json",
+  "title": "Majik's Studio .mstudio project.json v1",
+  "description": "Schema-versioned checkpoint of the journal (02-ARCH section 6). additionalProperties is TRUE throughout (deliberately, unlike command-catalog.schema.json's strict envelope): section 6 requires 'unknown JSON fields preserved on round-trip' for forward-compat across app versions. This schema constrains the TYPE of every field it knows about but never rejects a document for carrying extra ones.",
+
+  "type": "object",
+  "required": ["formatVersion", "projectId", "name", "tempo", "timeSig", "sampleRateHz", "ppq", "tracks", "clips", "journal"],
+  "additionalProperties": true,
+  "properties": {
+    "formatVersion": { "const": 1 },
+    "projectId": { "type": "string", "minLength": 1 },
+    "name": { "type": "string", "minLength": 1 },
+
+    "tempo": {
+      "type": "object",
+      "required": ["bpm"],
+      "additionalProperties": true,
+      "properties": { "bpm": { "type": "number", "exclusiveMinimum": 0, "maximum": 999 } }
+    },
+    "timeSig": {
+      "type": "object",
+      "required": ["numerator", "denominator"],
+      "additionalProperties": true,
+      "properties": {
+        "numerator": { "type": "integer", "minimum": 1, "maximum": 32 },
+        "denominator": { "type": "integer", "enum": [1, 2, 4, 8, 16, 32] }
+      }
+    },
+    "key": { "type": "string" },
+    "sampleRateHz": { "type": "integer", "enum": [44100, 48000] },
+    "ppq": { "const": 960, "description": "02-ARCH section 3: beat time as rational ticks, 960 PPQ integer ticks, no float beat math." },
+
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["sectionId", "name", "startTicks"],
+        "additionalProperties": true,
+        "properties": {
+          "sectionId": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "startTicks": { "type": "integer", "minimum": 0 },
+          "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" }
+        }
+      }
+    },
+
+    "markers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["markerId", "positionTicks", "label"],
+        "additionalProperties": true,
+        "properties": {
+          "markerId": { "type": "string", "minLength": 1 },
+          "positionTicks": { "type": "integer", "minimum": 0 },
+          "label": { "type": "string", "minLength": 1 },
+          "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" }
+        }
+      }
+    },
+
+    "tracks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["trackId", "name", "index"],
+        "additionalProperties": true,
+        "properties": {
+          "trackId": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "index": { "type": "integer", "minimum": 0 },
+          "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+          "heightPx": { "type": "integer", "minimum": 24, "maximum": 400 },
+          "muted": { "type": "boolean", "default": false },
+          "soloed": { "type": "boolean", "default": false },
+          "armed": { "type": "boolean", "default": false },
+          "inputChannel": { "type": "integer", "minimum": 0, "default": 0, "description": "0-based hardware input channel this track records from (track.setInputChannel). Absent means channel 0, which is what every project written before this field existed meant." },
+          "gainDb": { "type": "number", "minimum": -60, "maximum": 12, "default": 0 },
+          "pan": { "type": "number", "minimum": -1, "maximum": 1, "default": 0 },
+          "sends": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "a": { "type": "number", "minimum": 0, "maximum": 1 },
+              "b": { "type": "number", "minimum": 0, "maximum": 1 }
+            }
+          },
+          "eq": {
+            "description": "First-class 4-band channel EQ (deferred proposal 2, ACCEPTED in catalog v2). Bands 0-3, defaults 80/250/2500/8000 Hz at 0 dB, q 1. Omitted when every band is at its default. Previously persisted only under the namespaced `engineEq` key, which forced ParamRef (`track.eq.<band>.<gain|freq|q>`) to special-case the exact place that has to be general; `engineEq` is still READ for back-compat.",
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 4,
+            "items": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "freqHz": { "type": "number", "minimum": 20, "maximum": 20000 },
+                "gainDb": { "type": "number", "minimum": -24, "maximum": 24 },
+                "q": { "type": "number", "exclusiveMinimum": 0, "maximum": 10 }
+              }
+            }
+          },
+          "automation": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "volume": { "type": "array", "items": { "$ref": "#/$defs/automationPoint" } },
+              "pan": { "type": "array", "items": { "$ref": "#/$defs/automationPoint" } },
+              "lanes": {
+                "description": "Catalog v2: every non-legacy automation lane, keyed by its verbatim ParamRef path (e.g. `track.eq.2.gain`, `track.device.<id>.<param>`). `volume` and `pan` keep their v1 arrays and NEVER appear here — exactly one storage location per ParamRef. A well-formed path a reader does not recognize must be preserved verbatim, never dropped.",
+                "type": "object",
+                "propertyNames": { "pattern": "^[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)*$" },
+                "additionalProperties": { "type": "array", "items": { "$ref": "#/$defs/automationPoint" } }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "clips": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["clipId", "trackId", "assetHash", "startTicks", "lengthTicks"],
+        "additionalProperties": true,
+        "properties": {
+          "clipId": { "type": "string", "minLength": 1 },
+          "trackId": { "type": "string", "minLength": 1 },
+          "name": { "type": "string" },
+          "assetHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "startTicks": { "type": "integer", "minimum": 0 },
+          "lengthTicks": { "type": "integer", "exclusiveMinimum": 0 },
+          "sourceOffsetTicks": { "type": "integer", "minimum": 0, "default": 0 },
+          "gainDb": { "type": "number", "minimum": -60, "maximum": 12, "default": 0 },
+          "muted": { "type": "boolean", "default": false },
+          "fadeIn": { "$ref": "#/$defs/fade" },
+          "fadeOut": { "$ref": "#/$defs/fade" },
+          "warp": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "mode": { "type": "string", "enum": ["ratio", "conform"] },
+              "stretchRatio": { "type": "number", "exclusiveMinimum": 0 }
+            }
+          },
+          "offline": {
+            "type": "boolean",
+            "default": false,
+            "description": "true when assetHash could not be resolved under audio/ at open time (section 6: 'missing-asset opens degrade to offline clips with clear UI state, never a refusal to open')."
+          }
+        }
+      }
+    },
+
+    "masterBus": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "gainDb": { "type": "number", "minimum": -60, "maximum": 12, "default": 0 },
+        "limiter": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "ceilingDb": { "type": "number", "minimum": -6, "maximum": 0 },
+            "releaseMs": { "type": "number", "minimum": 1, "maximum": 1000 }
+          }
+        }
+      }
+    },
+
+    "phaseAnchorTicks": {
+      "description": "Catalog v2 (deferred proposal L8, ACCEPTED): project-level bar-grid phase anchor in ticks, so the first tracked downbeat lands on a bar line without a lead-in. Omitted when 0 (the v1 behaviour). Set by project.setPhaseAnchor; read by E7 warp markers and stem lead-in alignment.",
+      "type": "integer",
+      "minimum": 0,
+      "default": 0
+    },
+
+    "engineRouting": {
+      "description": "Catalog v2: the routing DAG. Namespaced like engineCrossfades/engineTakes and omitted when empty, in which case the v1 implicit topology applies (every track straight to master plus the two hard-coded aux buses). Node refs are `master`, `track.<id>` or `bus.<id>`; the graph is acyclic by construction because route.connect rejects a cycle at command time.",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": ["nodeId", "kind", "name"],
+            "properties": {
+              "nodeId": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" },
+              "kind": { "type": "string", "enum": ["bus", "group"] },
+              "name": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": ["edgeId", "from", "to", "level", "tap"],
+            "properties": {
+              "edgeId": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" },
+              "from": { "type": "string", "pattern": "^(master|(track|bus)\\.[A-Za-z0-9_-]+)$" },
+              "to": { "type": "string", "pattern": "^(master|(track|bus)\\.[A-Za-z0-9_-]+)$" },
+              "level": { "type": "number", "minimum": 0, "maximum": 4 },
+              "tap": { "type": "string", "enum": ["pre", "post"] }
+            }
+          }
+        }
+      }
+    },
+
+    "journal": {
+      "type": "object",
+      "required": ["entryCount", "tipHash", "genesisHash"],
+      "additionalProperties": true,
+      "description": "The checkpoint pointer into journal.jsonl. This is what makes project.json a CHECKPOINT rather than a second, divergent copy of the truth: conformance tooling recomputes the hash chain over journal.jsonl and requires entryCount/tipHash to match exactly. tipId is the id of the last journal entry (omitted only for a brand-new project with zero entries, entryCount=0, tipHash=genesisHash).",
+      "properties": {
+        "entryCount": { "type": "integer", "minimum": 0 },
+        "tipId": { "oneOf": [{ "type": "null" }, { "type": "string", "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$" }] },
+        "tipHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "genesisHash": {
+          "type": "string",
+          "pattern": "^0{64}$",
+          "description": "Always 64 zero chars in v1; see README.md 'Canonicalization and the hash chain'."
+        },
+        "checkpointedAt": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,6})?Z$" }
+      }
+    }
+  },
+
+  "$defs": {
+    "automationPoint": {
+      "type": "object",
+      "required": ["pointId", "positionTicks", "value"],
+      "additionalProperties": true,
+      "properties": {
+        "pointId": { "type": "string", "minLength": 1 },
+        "positionTicks": { "type": "integer", "minimum": 0 },
+        "value": { "type": "number" }
+      }
+    },
+    "fade": {
+      "type": "object",
+      "required": ["lengthTicks", "shape"],
+      "additionalProperties": true,
+      "properties": {
+        "lengthTicks": { "type": "integer", "minimum": 0 },
+        "shape": { "type": "string", "enum": ["linear", "equalPower", "exponential", "logarithmic"] }
+      }
+    }
+  }
+}

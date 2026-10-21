@@ -1,0 +1,155 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="600" viewBox="0 0 1040 600" font-family="-apple-system, 'SF Pro Text', Helvetica, sans-serif">
+  <defs>
+    <linearGradient id="shimmer" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FF5FA2"/>
+      <stop offset="0.5" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#2BD9C7"/>
+    </linearGradient>
+    <linearGradient id="regionsel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8B5CF6" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#8B5CF6" stop-opacity="0.10"/>
+    </linearGradient>
+  </defs>
+
+  <!-- canvas -->
+  <rect width="1040" height="600" fill="#0B0A12"/>
+  <text x="24" y="30" fill="#8A93A6" font-size="11" font-weight="700" letter-spacing="1">MAJIK'S MUSIC STUDIO  ·  REVISE bars 33-48  ·  drums + other in scope, vocals + bass null-preserved</text>
+
+  <!-- ============ timeline (left) ============ -->
+  <!-- ruler -->
+  <rect x="24" y="46" width="640" height="22" fill="#14121C"/>
+  <text x="34" y="61" fill="#8A93A6" font-size="10">32</text>
+  <text x="250" y="61" fill="#E8E6F0" font-size="10" font-weight="700">33</text>
+  <text x="470" y="61" fill="#E8E6F0" font-size="10" font-weight="700">48</text>
+  <text x="600" y="61" fill="#8A93A6" font-size="10">52</text>
+  <!-- selected region across all tracks -->
+  <rect x="245" y="46" width="232" height="364" fill="url(#regionsel)" stroke="#8B5CF6" stroke-width="1"/>
+  <rect x="245" y="46" width="232" height="16" fill="#8B5CF6"/>
+  <text x="252" y="58" fill="#fff" font-size="10" font-weight="700">Revise bars 33-48</text>
+
+  <!-- VOCALS track (unscoped -> calm, untouched) -->
+  <g>
+    <rect x="24" y="72" width="640" height="60" fill="#100E18"/>
+    <text x="30" y="90" fill="#FF5FA2" font-size="11" font-weight="700">Vocals</text>
+    <rect x="30" y="96" width="628" height="30" rx="4" fill="#FF5FA2" fill-opacity="0.16" stroke="#FF5FA2" stroke-opacity="0.5"/>
+    <path d="M30 111 q40 -9 80 0 t80 0 t80 0 t80 0 t80 0 t80 0 t80 0" stroke="#FF5FA2" stroke-opacity="0.7" fill="none"/>
+    <text x="590" y="90" fill="#8A93A6" font-size="9">unchanged</text>
+  </g>
+
+  <!-- DRUMS track (scoped) + take lane -->
+  <g>
+    <rect x="24" y="134" width="640" height="60" fill="#141019"/>
+    <text x="30" y="152" fill="#FFB020" font-size="11" font-weight="700">Drums</text>
+    <rect x="30" y="158" width="628" height="30" rx="4" fill="#FFB020" fill-opacity="0.16" stroke="#FFB020" stroke-opacity="0.5"/>
+    <path d="M30 173 h215 M245 173 q10 -10 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 M477 173 h181" stroke="#FFB020" stroke-opacity="0.8" fill="none"/>
+    <!-- generated badge (shimmer) on the revised region -->
+    <rect x="249" y="162" width="14" height="8" rx="2" fill="url(#shimmer)"/>
+  </g>
+  <!-- drums take lane -->
+  <g>
+    <rect x="24" y="196" width="640" height="52" fill="#0E0C15"/>
+    <text x="30" y="209" fill="#8A93A6" font-size="8" font-weight="700" letter-spacing="1">TAKES · DRUMS</text>
+    <rect x="245" y="212" width="232" height="10" rx="2" fill="#FFB020" fill-opacity="0.20" stroke="#FFB020" stroke-opacity="0.6"/>
+    <rect x="245" y="225" width="232" height="10" rx="2" fill="#FFB020" fill-opacity="0.45" stroke="#FFB020"/>
+    <rect x="245" y="238" width="150" height="10" rx="2" fill="url(#shimmer)" opacity="0.6"/>
+    <text x="484" y="221" fill="#8A93A6" font-size="8">Take 1</text>
+    <text x="484" y="234" fill="#E8E6F0" font-size="8" font-weight="700">Take 2</text>
+    <text x="484" y="247" fill="#8A93A6" font-size="8">Take 3 rendering</text>
+  </g>
+
+  <!-- BASS track (unscoped) -->
+  <g>
+    <rect x="24" y="250" width="640" height="52" fill="#100E18"/>
+    <text x="30" y="268" fill="#8B5CF6" font-size="11" font-weight="700">Bass</text>
+    <rect x="30" y="274" width="628" height="22" rx="4" fill="#8B5CF6" fill-opacity="0.16" stroke="#8B5CF6" stroke-opacity="0.5"/>
+    <path d="M30 285 h628" stroke="#8B5CF6" stroke-opacity="0.7" fill="none"/>
+    <text x="596" y="268" fill="#8A93A6" font-size="9">unchanged</text>
+  </g>
+
+  <!-- OTHER track (scoped) + take lane -->
+  <g>
+    <rect x="24" y="304" width="640" height="56" fill="#101619"/>
+    <text x="30" y="322" fill="#2BD9C7" font-size="11" font-weight="700">Other</text>
+    <rect x="30" y="328" width="628" height="26" rx="4" fill="#2BD9C7" fill-opacity="0.16" stroke="#2BD9C7" stroke-opacity="0.5"/>
+    <path d="M30 341 h215 M245 341 q10 -7 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0 M477 341 h181" stroke="#2BD9C7" stroke-opacity="0.8" fill="none"/>
+    <rect x="249" y="330" width="14" height="8" rx="2" fill="url(#shimmer)"/>
+  </g>
+  <!-- other take lane -->
+  <g>
+    <rect x="24" y="362" width="640" height="48" fill="#0E0C15"/>
+    <text x="30" y="375" fill="#8A93A6" font-size="8" font-weight="700" letter-spacing="1">TAKES · OTHER</text>
+    <rect x="245" y="378" width="232" height="9" rx="2" fill="#2BD9C7" fill-opacity="0.20" stroke="#2BD9C7" stroke-opacity="0.6"/>
+    <rect x="245" y="390" width="232" height="9" rx="2" fill="#2BD9C7" fill-opacity="0.45" stroke="#2BD9C7"/>
+    <rect x="245" y="401" width="180" height="9" rx="2" fill="url(#shimmer)" opacity="0.6"/>
+  </g>
+
+  <!-- crossfade markers at the region seams -->
+  <line x1="245" y1="46" x2="245" y2="410" stroke="#fff" stroke-opacity="0.35" stroke-dasharray="2 3"/>
+  <line x1="477" y1="46" x2="477" y2="410" stroke="#fff" stroke-opacity="0.35" stroke-dasharray="2 3"/>
+  <text x="24" y="436" fill="#8A93A6" font-size="9">Outside the region: original audio, bit-exact (null test peak = -200 dBFS).</text>
+  <text x="24" y="452" fill="#B9A8FF" font-size="9">Region seams: 20 ms equal-power crossfade inside each edge (declick step = the material floor).</text>
+
+  <!-- ============ Revise / audition panel (right rail) ============ -->
+  <rect x="700" y="46" width="316" height="508" fill="#14121C" stroke="#221F2E"/>
+  <text x="716" y="70" fill="#8A93A6" font-size="10" font-weight="700" letter-spacing="1">AUDITION BARS 33-48</text>
+  <text x="1000" y="70" fill="#8A93A6" font-size="9" text-anchor="end">1-9 pick, A original</text>
+
+  <!-- take rows -->
+  <g font-size="12">
+    <!-- Original -->
+    <rect x="716" y="80" width="284" height="30" rx="8" fill="#1A1726" stroke="#2A2740"/>
+    <rect x="724" y="87" width="16" height="16" rx="4" fill="#1F1B2E"/>
+    <text x="732" y="99" fill="#8A93A6" font-size="10" font-weight="700" text-anchor="middle">A</text>
+    <text x="750" y="99" fill="#8A93A6">Original</text>
+
+    <!-- Take 1 -->
+    <rect x="716" y="116" width="284" height="30" rx="8" fill="#1A1726" stroke="#2A2740"/>
+    <rect x="724" y="123" width="16" height="16" rx="4" fill="#1F1B2E"/>
+    <text x="732" y="135" fill="#8A93A6" font-size="10" font-weight="700" text-anchor="middle">1</text>
+    <text x="750" y="135" fill="#B9B4C6">Take 1</text>
+
+    <!-- Take 2 (auditioning) -->
+    <rect x="716" y="152" width="284" height="30" rx="8" fill="#8B5CF6" fill-opacity="0.14" stroke="#8B5CF6"/>
+    <rect x="724" y="159" width="16" height="16" rx="4" fill="#8B5CF6"/>
+    <text x="732" y="171" fill="#fff" font-size="10" font-weight="700" text-anchor="middle">2</text>
+    <text x="750" y="171" fill="#E8E6F0" font-weight="700">Take 2</text>
+    <text x="988" y="171" fill="#2BD9C7" font-size="11" text-anchor="end">≈</text>
+
+    <!-- Take 3 -->
+    <rect x="716" y="188" width="284" height="30" rx="8" fill="#1A1726" stroke="#2A2740"/>
+    <rect x="724" y="195" width="16" height="16" rx="4" fill="#1F1B2E"/>
+    <text x="732" y="207" fill="#8A93A6" font-size="10" font-weight="700" text-anchor="middle">3</text>
+    <text x="750" y="207" fill="#B9B4C6">Take 3</text>
+  </g>
+
+  <!-- Discard / Commit -->
+  <rect x="716" y="230" width="136" height="30" rx="8" fill="#1A1726" stroke="#2A2740"/>
+  <text x="784" y="250" fill="#B9B4C6" font-size="12" font-weight="700" text-anchor="middle">Discard</text>
+  <rect x="864" y="230" width="136" height="30" rx="8" fill="url(#shimmer)"/>
+  <text x="932" y="250" fill="#fff" font-size="12" font-weight="700" text-anchor="middle">Commit</text>
+
+  <text x="716" y="284" fill="#8A93A6" font-size="10">Commit writes the take in place with a 20 ms crossfade,</text>
+  <text x="716" y="298" fill="#8A93A6" font-size="10">as one undo step. The committed take then re-renders at</text>
+  <text x="716" y="312" fill="#8A93A6" font-size="10">full quality in the background and swaps in seamlessly.</text>
+
+  <!-- setup recap (what produced this) -->
+  <line x1="716" y1="330" x2="1000" y2="330" stroke="#221F2E"/>
+  <text x="716" y="352" fill="#8A93A6" font-size="10" font-weight="700" letter-spacing="1">FROM</text>
+  <text x="716" y="372" fill="#B9B4C6" font-size="11">"strip the drums to half-time, darker pads"</text>
+  <g font-size="10" font-weight="700">
+    <rect x="716" y="384" width="58" height="20" rx="10" fill="#FFB020" fill-opacity="0.22" stroke="#FFB020"/>
+    <text x="745" y="398" fill="#E8E6F0" text-anchor="middle">Drums</text>
+    <rect x="780" y="384" width="52" height="20" rx="10" fill="#2BD9C7" fill-opacity="0.22" stroke="#2BD9C7"/>
+    <text x="806" y="398" fill="#E8E6F0" text-anchor="middle">Other</text>
+    <rect x="838" y="384" width="58" height="20" rx="10" fill="none" stroke="#2A2740"/>
+    <text x="867" y="398" fill="#6B6478" text-anchor="middle">Vocals</text>
+    <rect x="902" y="384" width="48" height="20" rx="10" fill="none" stroke="#2A2740"/>
+    <text x="926" y="398" fill="#6B6478" text-anchor="middle">Bass</text>
+  </g>
+  <text x="716" y="426" fill="#8A93A6" font-size="10">Variants 3   ·   Keep lyrics off   ·   Crossfade 20 ms</text>
+  <text x="716" y="446" fill="#8A93A6" font-size="10">Draft turbo-8   ·   Commit base-50   ·   engine: on-device</text>
+
+  <line x1="716" y1="466" x2="1000" y2="466" stroke="#221F2E"/>
+  <text x="716" y="488" fill="#6B6478" font-size="9">The shimmer marks generative surfaces only: if it shimmers, a model made it.</text>
+  <text x="716" y="502" fill="#6B6478" font-size="9">Every take carries model, steps, seed, device + region lineage.</text>
+</svg>

@@ -1,0 +1,24 @@
+{
+  "id": "700000000000000000000001YX",
+  "ts": "2026-07-11T20:04:11Z",
+  "actor": {
+    "kind": "user",
+    "name": "aaron"
+  },
+  "name": "marker.remove",
+  "params": {
+    "markerId": "mk_1"
+  },
+  "inverse": {
+    "name": "marker.set",
+    "params": {
+      "markerId": "mk_1",
+      "positionTicks": 3840,
+      "label": "drop candidate"
+    }
+  },
+  "result": {
+    "ok": true
+  },
+  "hash": "7cc63d4a28dc610f08258bf91b2526a4e7afbae04b921df39021b3256596529d"
+}

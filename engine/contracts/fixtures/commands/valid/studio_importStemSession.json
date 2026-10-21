@@ -1,0 +1,22 @@
+{
+  "id": "700000000000000000000001YW",
+  "ts": "2026-07-11T20:04:11Z",
+  "actor": {
+    "kind": "user",
+    "name": "aaron"
+  },
+  "name": "studio.importStemSession",
+  "params": {
+    "stemSessionId": "stem_session_42"
+  },
+  "inverse": {
+    "name": "track.remove",
+    "params": {
+      "trackId": "trk_pad"
+    }
+  },
+  "result": {
+    "ok": true
+  },
+  "hash": "4f61d7ecff894d32315dec96bee244d7dd9068b7968d52b76c385c036bca4f18"
+}

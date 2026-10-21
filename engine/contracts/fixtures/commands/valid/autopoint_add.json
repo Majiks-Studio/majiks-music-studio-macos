@@ -1,0 +1,28 @@
+{
+  "id": "600000000000000000000001YN",
+  "ts": "2026-07-11T20:04:11Z",
+  "actor": {
+    "kind": "user",
+    "name": "aaron"
+  },
+  "name": "autopoint.add",
+  "params": {
+    "trackId": "trk_bass",
+    "target": "track.pan",
+    "pointId": "ap_9",
+    "positionTicks": 480,
+    "value": 0
+  },
+  "inverse": {
+    "name": "autopoint.remove",
+    "params": {
+      "trackId": "trk_bass",
+      "target": "track.pan",
+      "pointId": "ap_9"
+    }
+  },
+  "result": {
+    "ok": true
+  },
+  "hash": "c029b5d1ac185f9110c539000b6e55d656ab639cf3678dd585aedfb15c7ea7bb"
+}

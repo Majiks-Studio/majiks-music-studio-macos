@@ -1,0 +1,6 @@
+# Cargo build output
+target/
+
+# Generated fixture audio (recreated bit-identically by gen-fixtures;
+# MANIFEST.json with the pinned hashes IS committed)
+fixtures/*.wav

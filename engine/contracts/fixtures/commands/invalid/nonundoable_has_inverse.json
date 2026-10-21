@@ -1,0 +1,24 @@
+{
+  "id": "600000000000000000000002Y2",
+  "ts": "2026-07-11T20:04:11Z",
+  "actor": {
+    "kind": "user",
+    "name": "aaron"
+  },
+  "name": "export.master",
+  "params": {
+    "outputPath": "/tmp/x.wav",
+    "format": "wav"
+  },
+  "inverse": {
+    "name": "export.master",
+    "params": {
+      "outputPath": "/tmp/x.wav",
+      "format": "wav"
+    }
+  },
+  "result": {
+    "ok": true
+  },
+  "hash": "aecc03ffc286dbb32724ec95d858adb1dab55e04c9175895bcc75188a2fe6518"
+}

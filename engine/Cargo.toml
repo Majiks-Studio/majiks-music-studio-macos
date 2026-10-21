@@ -1,0 +1,31 @@
+[workspace]
+resolver = "2"
+members = ["timeline-core", "render", "media", "contracts/conformance", "agent-surface"]
+exclude = ["fuzz"]
+
+[workspace.package]
+edition = "2021"
+license = "Apache-2.0"
+publish = false
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+# float_roundtrip is load-bearing for journal hash-chain integrity, do not drop.
+# serde_json's default float parser is NOT the exact inverse of its ryu-based
+# float serializer: it can misround a shortest-round-trip decimal by 1 ULP (e.g.
+# it parses "120.00000000000003" to the f64 one ULP above the value ryu produced
+# that text from). The journal hashes the canonical ryu text on append and
+# RE-parses that text on reopen (envelope::from_line -> verify), so a 1-ULP parse
+# error makes a reopened entry re-hash differently and chain verification fails
+# ("chain broken at entry N"). This was reproducible from a landed song whose
+# measured BPM was such a value. float_roundtrip makes float parsing bit-exact,
+# so parse(canonical(f)) == f for every finite f64 and the chain is stable for
+# any float param. Integer parsing/formatting is unaffected (golden hashes hold).
+serde_json = { version = "1", features = ["float_roundtrip"] }
+thiserror = "2"
+blake3 = "1"
+regex-lite = "0.1"
+
+# Release builds keep debug symbols so probe traces stay readable.
+[profile.release]
+debug = true

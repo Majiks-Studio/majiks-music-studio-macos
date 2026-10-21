@@ -1,0 +1,87 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      skip_upload:
+        description: 'Skip B2 upload and site notification'
+        required: false
+        default: 'false'
+
+jobs:
+  build-and-release:
+    runs-on: macos
+    # Labels must match the act_runner registration: self-hosted, macOS, arm64
+    # Runner: majiks-mac (registered on build machine)
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            TAG="${{ github.ref_name }}"
+            VERSION="${TAG#v}"
+          else
+            # Manual dispatch — read from Info.plist
+            VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" src/swift/Sources/Info.plist)
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Building version: $VERSION"
+
+      - name: Verify version matches Info.plist
+        run: |
+          PLIST_VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" src/swift/Sources/Info.plist)
+          if [ "${{ steps.version.outputs.version }}" != "$PLIST_VERSION" ]; then
+            echo "ERROR: Tag version (${{ steps.version.outputs.version }}) does not match Info.plist ($PLIST_VERSION)"
+            echo "Update Info.plist before tagging."
+            exit 1
+          fi
+          echo "Version $PLIST_VERSION confirmed in Info.plist"
+
+      - name: Build, sign, notarize, upload
+        env:
+          B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
+          B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+          MAJIKS_STUDIO_VERSION_TOKEN: ${{ secrets.MAJIKS_STUDIO_VERSION_TOKEN }}
+        run: |
+          SKIP_FLAG=""
+          if [ "${{ github.event.inputs.skip_upload }}" = "true" ]; then
+            SKIP_FLAG="--skip-upload"
+          fi
+          ./build-release.sh --ci $SKIP_FLAG
+
+      - name: Upload DMG as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MajiksMusicStudio-v${{ steps.version.outputs.version }}-macOS.dmg
+          path: dist/MajiksMusicStudio-v${{ steps.version.outputs.version }}-macOS.dmg
+          retention-days: 90
+
+      - name: Create Forgejo release
+        if: github.ref_type == 'tag'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          DMG_PATH="dist/MajiksMusicStudio-v${VERSION}-macOS.dmg"
+          DOWNLOAD_URL="https://f005.backblazeb2.com/file/majiks-download-bucket/MajiksMusicStudio-v${VERSION}-macOS.dmg"
+
+          # Extract changelog from README
+          CHANGELOG=$(sed -n "/^### v${VERSION}/,/^### v/{/^### v${VERSION}/d;/^### v/d;p;}" README.md)
+
+          # Create release via Forgejo API (if tea CLI is available)
+          if command -v tea &> /dev/null; then
+            tea release create \
+              --tag "v${VERSION}" \
+              --title "Majik's Music Studio v${VERSION}" \
+              --note "## Download\n\n[MajiksMusicStudio-v${VERSION}-macOS.dmg](${DOWNLOAD_URL})\n\n## Changes\n\n${CHANGELOG}" \
+              --asset "$DMG_PATH"
+          else
+            echo "tea CLI not found — create release manually on Forgejo"
+            echo "Tag: v${VERSION}"
+            echo "Download: ${DOWNLOAD_URL}"
+          fi

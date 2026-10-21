@@ -1,0 +1,22 @@
+[package]
+name = "timeline-core"
+version = "0.2.0"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Pure project model, tempo math, and command bus for Majik's Music Studio. wasm32-compilable: no cpal, no fs (io behind traits), no threads."
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+blake3.workspace = true
+regex-lite.workspace = true
+
+[dev-dependencies]
+proptest = "1"
+contracts-conformance = { path = "../contracts/conformance" }
+tempfile = "3"
+
+[[example]]
+name = "mstudio_roundtrip"

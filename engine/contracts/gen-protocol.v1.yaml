@@ -1,0 +1,456 @@
+openapi: "3.1.0"
+info:
+  title: Majik's Studio Gen Protocol
+  version: "1.0.0"
+  description: |
+    One request/job shape over four engine routes (local MLX via RPC, remote ACE
+    server, Majiks Gen Node gateway, UC cloud), normalizing what already exists in
+    src/python/majik_backend/ace_generator.py and rpc_server.py per
+    02-ARCHITECTURE.md section 5. The Swift ServerPool stays the router; Python
+    stays the local executor.
+
+    This document is the human-readable operation contract (paths, request
+    bodies, response shapes, status semantics). The same schemas, as plain JSON
+    Schema, live in gen-protocol.schemas.json so conformance tooling in both Rust
+    and Python can validate fixtures without a YAML dependency. Field-by-field
+    mapping onto the existing Python backend's exact parameter names is in
+    gen-protocol-mapping.md; that mapping table is the authoritative source for
+    "why does field X here become field Y on the wire", not this file.
+
+    Transport note: v1 does not add a new HTTP surface for local generation. The
+    engine's agent-surface (rmcp server) exposes these operations to MCP tools and
+    UI; internally, for the local-mlx route, it speaks the EXISTING JSON-RPC to
+    Python (stdin/stdout, "id"-correlated progress notifications) and presents it
+    through this job-shaped contract. For remote routes (remote-ace, gen-node,
+    uc-cloud) the existing submit/poll HTTP calls already match this shape closely
+    (see gen-protocol-mapping.md, "Remote route: already async"). The paths below
+    describe the NORMALIZED surface every route is normalized to, not four
+    different wire protocols.
+  contact:
+    name: Majik's Music Studio DAW program
+    url: https://git.unicorncommander.ai/MajiksStudio/majiks-music-studio-pro
+
+servers:
+  - url: "internal://engine/agent-surface"
+    description: In-process to the Majik's Music Studio.app engine (rmcp localhost streamable-HTTP server, D4 in 02-ARCHITECTURE.md). Not a public network API.
+
+tags:
+  - name: generation
+    description: The nine Gen Protocol ops.
+  - name: jobs
+    description: Job lifecycle, shared by every op.
+  - name: capabilities
+    description: Route/model/slot discovery.
+
+paths:
+  /gen/generate:
+    post:
+      operationId: generate
+      tags: [generation]
+      summary: text2music generation.
+      description: |
+        Backs command-catalog gen.song. Maps to ace_generator.generate_music
+        (RPC method generate_music) when nVariants=1, and to
+        ace_generator.generate_variants (still RPC method generate_music, with
+        wire param count>1) when nVariants>1. See gen-protocol-mapping.md.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "gen-protocol.schemas.json#/$defs/generateRequest"
+      responses:
+        "202":
+          description: Job accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "gen-protocol.schemas.json#/$defs/submitResponse"
+
+  /gen/revise:
+    post:
+      operationId: revise
+      tags: [generation]
+      summary: Region repaint with an instruction delta.
+      description: |
+        Backs command-catalog gen.revise. Maps to ace_generator.generate_repaint
+        (RPC method generate_repaint); protocol field "instruction" becomes the
+        backend's "caption" parameter (02-ARCH section 5: "instruction -> caption
+        delta"). Base model, 50 steps by default: honest latency, not turbo.
+        scope != all-stems triggers the stem-scope pipeline (repaint the mix
+        region, re-separate, splice only the scoped stem(s), null-preserve the
+        rest, report per-stem hashes) described in 02-ARCH section 5. variants > 1
+        is NOT a single backend call: the engine issues that many sequential
+        generate_repaint calls with incrementing seeds (no batch-repaint primitive
+        exists server-side). See gen-protocol-mapping.md.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "gen-protocol.schemas.json#/$defs/reviseRequest"
+      responses:
+        "202":
+          description: Job accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "gen-protocol.schemas.json#/$defs/submitResponse"
+
+  /gen/extend:
+    post:
+      operationId: extend
+      tags: [generation]
+      summary: Continue audio from where a clip ends.
+      description: |
+        Backs command-catalog gen.extend. Maps to
+        ace_generator.generate_continuation (RPC method generate_continuation).
+        addedDurationSeconds is NOT passed through directly: the backend's
+        duration parameter is a TOTAL target duration, not a delta, so the engine
+        computes duration = round(sourceDurationSeconds + addedDurationSeconds)
+        before calling generate_continuation. Turbo model, 8 steps by default
+        (unlike revise/layer/autocomplete, which default to base/50). See
+        gen-protocol-mapping.md.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "gen-protocol.schemas.json#/$defs/extendRequest"
+      responses:
+        "202":
+          description: Job accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "gen-protocol.schemas.json#/$defs/submitResponse"
+
+  /gen/layer:
+    post:
+      operationId: layer
+      tags: [generation]
+      summary: Generate a new stem that fits existing context audio (lego mode).
+      description: |
+        Backs command-catalog gen.layer. Maps to ace_generator.generate_lego (RPC
+        method generate_lego); protocol "instruction" maps 1:1 onto the backend's
+        own "instruction" parameter (e.g. "bass", "sax lead", the exact examples
+        in 02-ARCH section 5). contextAudioRef is optional, matching
+        generate_lego's source_audio="" default (generate a stem with no
+        reference context). Base model, 50 steps by default. generate_lego does
+        NOT accept the ACE-Step v1.5 advanced diffusion/LM parameters that
+        generate/revise/extend/cover accept (shift, infer_method, use_adg,
+        cfg_interval_*, lm_top_k, lm_top_p, lm_negative_prompt,
+        constrained_decoding are silently not read by this RPC method); this
+        protocol's layerRequest therefore does not expose them either, to avoid
+        promising a knob the backend does not have. See gen-protocol-mapping.md.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "gen-protocol.schemas.json#/$defs/layerRequest"
+      responses:
+        "202":
+          description: Job accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "gen-protocol.schemas.json#/$defs/submitResponse"
+
+  /gen/retake:
+    post:
+      operationId: retake
+      tags: [generation]
+      summary: Fresh-seed variation of an existing region or whole song, same prompt.
+      description: |
+        Backs command-catalog gen.retake. POLYMORPHIC ROUTING, not a 1:1 call to a
+        single backend function: when regionStartSeconds/regionEndSeconds are both
+        present, the engine calls generate_repaint with the SAME
+        source_audio/repainting_start/repainting_end/caption as the request that
+        produced sourceTakeId, plus a fresh seed. When both are absent, the engine
+        calls generate_music with the SAME caption as sourceTakeId's request, plus
+        a fresh seed. Neither path reuses ace_generator.generate_variants: that
+        function is the batch-of-N wrapper behind the generate op's
+        nVariants > 1, not the retake primitive (confirmed by reading
+        ace_generator.py: generate_variants jitters bpm/key per index in addition
+        to seed, which is not what "same prompt, new seed" means for a single
+        retake). See gen-protocol-mapping.md.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "gen-protocol.schemas.json#/$defs/retakeRequest"
+      responses:
+        "202":
+          description: Job accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "gen-protocol.schemas.json#/$defs/submitResponse"
+
+  /gen/autocomplete:
+    post:
+      operationId: autocomplete
+      tags: [generation]
+      summary: Fill in missing instruments around an existing partial mix. Flag v1.1.
+      description: |
+        Backs command-catalog gen.autocomplete. Maps to
+        ace_generator.generate_auto_complete (RPC method generate_auto_complete).
+        NOTE: generate_auto_complete and generate_continuation (the extend op)
+        both set task_type="complete" internally in ACE-Step; they are still two
+        distinct Python entry points with different duration defaults
+        (auto_complete: 0 = match source length exactly; continuation: 0 = double
+        source length). Do not conflate them. Base model, 50 steps by default. See
+        gen-protocol-mapping.md.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "gen-protocol.schemas.json#/$defs/autocompleteRequest"
+      responses:
+        "202":
+          description: Job accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "gen-protocol.schemas.json#/$defs/submitResponse"
+
+  /gen/cover:
+    post:
+      operationId: cover
+      tags: [generation]
+      summary: Style-transfer cover from a reference clip. Flag v1.1.
+      description: |
+        Backs command-catalog gen.cover. Maps to ace_generator.generate_cover (RPC
+        method generate_cover); coverStrength maps 1:1 onto the backend's
+        cover_strength wire parameter (0.0 = more style transfer, 1.0 = closer to
+        the reference). Turbo model, 8 steps by default (like generate/extend, NOT
+        base/50 like revise/layer/autocomplete). See gen-protocol-mapping.md.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "gen-protocol.schemas.json#/$defs/coverRequest"
+      responses:
+        "202":
+          description: Job accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "gen-protocol.schemas.json#/$defs/submitResponse"
+
+  /gen/separate:
+    post:
+      operationId: separate
+      tags: [generation]
+      summary: Stem separation.
+      description: |
+        Backs command-catalog gen.separate. engine=demucs (default) maps to
+        ace_generator.export_stems (RPC method export_stems: file_path,
+        output_dir -> {stems:{vocals,drums,bass,other}, output_dir}), the htdemucs
+        4-stem path, with NO progress events (the current implementation is a
+        blocking subprocess call with no progress callback wired at all). Ignores
+        "instruction". engine=ace-extract maps to ace_generator.generate_extract
+        (RPC method generate_extract: source_audio, instruction (required,
+        comma-separated stems to isolate, e.g. "vocals, drums"), caption,
+        duration; base model, 50 steps by default), the ACE-Step generative
+        separator, labeled generative in lineage per 02-ARCH section 5 (its
+        gen.landed entry's engineIdentity.model is an ACE-Step model name, never
+        "htdemucs"). See gen-protocol-mapping.md.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "gen-protocol.schemas.json#/$defs/separateRequest"
+      responses:
+        "202":
+          description: Job accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "gen-protocol.schemas.json#/$defs/submitResponse"
+
+  /gen/analyze:
+    post:
+      operationId: analyze
+      tags: [generation]
+      summary: bpm, key, downbeats, duration, loudness.
+      description: |
+        Backs the analyze read path used by import.audio (conform) and by manual
+        "what is this clip" UI. mode=full (default) maps to
+        ace_generator.understand_music (RPC method understand_music: audio_path,
+        lm_model -> {caption,lyrics,bpm,key,duration,language,time_signature}),
+        AI-powered with a librosa fallback baked in, and DOES emit progress events
+        (analyzing 10%, done 100%). mode=fast maps to the analyze_audio_file RPC
+        method (file_path, caption, title -> {parameters:{bpm,key,duration,
+        caption?,lyrics?,genre?,style?}}), signal-only, synchronous, NO progress
+        events, faster because it skips model loading unless existingCaption or
+        existingTitle is given (then it also runs LLM genre/style enrichment).
+        KNOWN GAP: downbeats and loudnessLufs are always null in v1. Neither
+        exists in the current Python backend; downbeats has no owner anywhere in
+        this codebase today, and loudness is planned for the Rust engine's media
+        crate (02-ARCH section 3: "analysis, loudness"), not Python. See
+        gen-protocol-mapping.md for the open proposal.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "gen-protocol.schemas.json#/$defs/analyzeRequest"
+      responses:
+        "200":
+          description: |
+            Synchronous result (mode=fast, and mode=full's librosa fallback path,
+            both return inline; mode=full's AI path still emits progress events
+            first even though the RPC call itself is a single blocking
+            request/response, not a submit/poll job).
+          content:
+            application/json:
+              schema:
+                $ref: "gen-protocol.schemas.json#/$defs/analyzeResponse"
+
+  /gen/finalize:
+    post:
+      operationId: finalize
+      tags: [generation]
+      summary: Re-render a committed draft take at full quality and splice it in place.
+      description: |
+        Backs command-catalog gen.finalize (the draft/commit re-render swap named
+        in 02-ARCH section 4's gen catalog line). Same request shape as revise
+        (request is a reviseRequest: identical sourceAudioRef, region, instruction
+        and scope as the request that produced draftTakeId), plus draftTakeId and
+        targetQualityRung. Maps to the same backend call as revise
+        (generate_repaint), with model_name/num_inference_steps bumped to the
+        target rung (draft=acestep-v15-turbo/8 steps, standard=acestep-v15-quality
+        /step count not observed in any shipped call site, full=acestep-v15-base
+        /50 steps) and the draft's OWN seed reused rather than a fresh one, for
+        lineage fidelity ("identical region + lineage" per 02-ARCH section 4).
+        Completion journals a gen.landed entry the same as any other gen op, and
+        the take.promote that follows performs the splice-in-place swap. See
+        gen-protocol-mapping.md.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "gen-protocol.schemas.json#/$defs/finalizeRequest"
+      responses:
+        "202":
+          description: Job accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "gen-protocol.schemas.json#/$defs/submitResponse"
+
+  /gen/jobs/{jobId}:
+    get:
+      operationId: getJob
+      tags: [jobs]
+      summary: Poll a job's current state (polling parity for remote routes).
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            $ref: "gen-protocol.schemas.json#/$defs/ulid"
+      responses:
+        "200":
+          description: Current state; queued/running have no dedicated schema beyond {state, jobId}, terminal states are fully specified.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    required: [state, jobId]
+                    properties:
+                      state: { type: string, enum: [queued, running] }
+                      jobId: { $ref: "gen-protocol.schemas.json#/$defs/ulid" }
+                  - $ref: "gen-protocol.schemas.json#/$defs/terminalState"
+
+  /gen/jobs/{jobId}/cancel:
+    post:
+      operationId: cancelJob
+      tags: [jobs]
+      summary: Cancel an in-flight job.
+      description: |
+        Backs command-catalog gen.cancel. KNOWN v1 BACKEND GAP: the current
+        Python backend's cancel_generation RPC is a single global threading.Event,
+        not per-job (there is exactly one in-flight local generation at a time in
+        practice, so this has not mattered yet, but it means cancelling jobId=X
+        while jobId=Y is also running, if that ever becomes possible, cancels
+        both). This path documents the target per-job contract; the mapping table
+        documents the gap. See gen-protocol-mapping.md.
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            $ref: "gen-protocol.schemas.json#/$defs/ulid"
+      responses:
+        "200":
+          description: Cancellation requested.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [jobId]
+                properties:
+                  jobId: { $ref: "gen-protocol.schemas.json#/$defs/ulid" }
+
+  /gen/capabilities:
+    get:
+      operationId: getCapabilities
+      tags: [capabilities]
+      summary: Per-endpoint supported ops, models, and concurrent slots (ServerPool merges).
+      responses:
+        "200":
+          description: Capability discovery response.
+          content:
+            application/json:
+              schema:
+                $ref: "gen-protocol.schemas.json#/$defs/capabilitiesResponse"
+
+components:
+  schemas:
+    generateRequest:
+      $ref: "gen-protocol.schemas.json#/$defs/generateRequest"
+    reviseRequest:
+      $ref: "gen-protocol.schemas.json#/$defs/reviseRequest"
+    extendRequest:
+      $ref: "gen-protocol.schemas.json#/$defs/extendRequest"
+    layerRequest:
+      $ref: "gen-protocol.schemas.json#/$defs/layerRequest"
+    retakeRequest:
+      $ref: "gen-protocol.schemas.json#/$defs/retakeRequest"
+    autocompleteRequest:
+      $ref: "gen-protocol.schemas.json#/$defs/autocompleteRequest"
+    coverRequest:
+      $ref: "gen-protocol.schemas.json#/$defs/coverRequest"
+    separateRequest:
+      $ref: "gen-protocol.schemas.json#/$defs/separateRequest"
+    analyzeRequest:
+      $ref: "gen-protocol.schemas.json#/$defs/analyzeRequest"
+    analyzeResponse:
+      $ref: "gen-protocol.schemas.json#/$defs/analyzeResponse"
+    finalizeRequest:
+      $ref: "gen-protocol.schemas.json#/$defs/finalizeRequest"
+    submitResponse:
+      $ref: "gen-protocol.schemas.json#/$defs/submitResponse"
+    progressEvent:
+      $ref: "gen-protocol.schemas.json#/$defs/progressEvent"
+    terminalState:
+      $ref: "gen-protocol.schemas.json#/$defs/terminalState"
+    capabilitiesResponse:
+      $ref: "gen-protocol.schemas.json#/$defs/capabilitiesResponse"
+
+  x-progressChannel:
+    description: |
+      Progress events are not HTTP responses: they arrive over the existing RPC
+      notification channel (Swift already decodes method="progress") for the
+      local-mlx route, and over polling parity (GET /gen/jobs/{jobId}) for remote
+      routes. Documented here as a component rather than a path because it is not
+      request/response. Shape: components.schemas.progressEvent.

@@ -1,0 +1,25 @@
+{
+  "id": "700000000000000000000001YT",
+  "ts": "2026-07-11T20:04:11Z",
+  "actor": {
+    "kind": "user",
+    "name": "aaron"
+  },
+  "name": "import.audio",
+  "params": {
+    "sourcePath": "/Users/aaron/Desktop/vox-take-3.wav",
+    "targetTrackId": "trk_vox",
+    "separate": false,
+    "conform": true
+  },
+  "inverse": {
+    "name": "clip.remove",
+    "params": {
+      "clipId": "clip_vox_imported_1"
+    }
+  },
+  "result": {
+    "ok": true
+  },
+  "hash": "9667511d3a268a13e3eac8cfcbac1022c141cd5dbbb3e3f82469e826a2dc529c"
+}

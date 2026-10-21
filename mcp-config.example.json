@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "music-studio": {
+      "command": "/path/to/Majiks-Music-Studio/.venv/bin/majiks-music-studio-mcp",
+      "env": {
+        "ACE_STEP_ROOT": "~/ACE-Step-1.5"
+      }
+    }
+  }
+}

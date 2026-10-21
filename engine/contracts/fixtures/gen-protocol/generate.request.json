@@ -1,0 +1,13 @@
+{
+  "requestId": "400000000000000000000008WD",
+  "caption": "warm lofi hip hop, rain on a window, vinyl crackle, mellow rhodes",
+  "lyrics": "",
+  "durationSeconds": 120,
+  "bpm": 84,
+  "key": "D minor",
+  "timeSig": "4",
+  "seed": 42,
+  "model": "acestep-v15-turbo",
+  "steps": 8,
+  "nVariants": 1
+}

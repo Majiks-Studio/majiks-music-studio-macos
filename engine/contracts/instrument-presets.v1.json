@@ -1,0 +1,82 @@
+{
+  "presetsVersion": "1.0",
+  "note": "Named starting points for the built-in synth. THE single source of truth for both halves of the app: the Rust proof (engine/agent-surface/tests/instrument_tone.rs) renders every preset in this file through the real command bus and asserts they sound different from each other and from the default, and the Swift table (src/swift/Sources/Studio/StudioInstrumentModel.swift, StudioInstrumentPreset.all) is asserted equal to this file byte for byte by StudioSamplerUITests. Neither side may edit its own copy alone. Each 'params' entry is a device.param.set (trackId, deviceId, key, value) on the track's instrument; keys are DEVICE_PARAM_KEYS (timeline-core/src/model.rs) and a key that is ABSENT here reads as the DSP default, because instrument params are sparse. waveform is 0 sine / 1 saw / 2 square / 3 triangle.",
+  "honesty": "None of these is a sampled acoustic instrument. This app ships no instrument samples at all — the sounds vault is drum one-shots and stems — so 'Electric Piano' is a synthesized approximation of an electric piano and is named as one. Nothing here is called 'Piano'.",
+  "presets": [
+    {
+      "id": "electricPiano",
+      "name": "Electric Piano",
+      "blurb": "Bell-like and percussive. Loudest the instant you press the key, then it fades on its own — like a struck key rather than a held note.",
+      "params": {
+        "waveform": 3,
+        "cutoff": 3800,
+        "resonance": 0.1,
+        "attack": 0.002,
+        "decay": 0.85,
+        "sustain": 0.12,
+        "release": 0.35,
+        "gain": -4
+      }
+    },
+    {
+      "id": "softPad",
+      "name": "Soft Pad",
+      "blurb": "Slow and warm. It swells in over about half a second and hangs on after you let go, so a held chord becomes a bed for everything else.",
+      "params": {
+        "waveform": 1,
+        "cutoff": 1200,
+        "resonance": 0.08,
+        "attack": 0.4,
+        "decay": 0.6,
+        "sustain": 0.75,
+        "release": 1.1,
+        "gain": -10
+      }
+    },
+    {
+      "id": "pluck",
+      "name": "Pluck",
+      "blurb": "Short and bright, like a plucked string. Gone in a fifth of a second however long you hold the key, so fast parts stay clear instead of turning to mush.",
+      "params": {
+        "waveform": 1,
+        "cutoff": 3200,
+        "resonance": 0.22,
+        "attack": 0.001,
+        "decay": 0.2,
+        "sustain": 0,
+        "release": 0.16,
+        "gain": -6
+      }
+    },
+    {
+      "id": "bass",
+      "name": "Bass",
+      "blurb": "Dark and round, made for the bottom two octaves. The bright half of the sound is filtered away so it sits under everything else instead of fighting it.",
+      "params": {
+        "waveform": 2,
+        "cutoff": 700,
+        "resonance": 0.18,
+        "attack": 0.004,
+        "decay": 0.3,
+        "sustain": 0.6,
+        "release": 0.12,
+        "gain": -5
+      }
+    },
+    {
+      "id": "organ",
+      "name": "Organ",
+      "blurb": "Holds dead steady for as long as you hold the key, and stops almost the moment you let go. No fade in, no fade out — the sound is either on or off.",
+      "params": {
+        "waveform": 2,
+        "cutoff": 5200,
+        "resonance": 0.02,
+        "attack": 0.006,
+        "decay": 0.006,
+        "sustain": 1,
+        "release": 0.05,
+        "gain": -9
+      }
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+[package]
+name = "agent-surface"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Majik's Music Studio agent surface: engine-instance FFI (UniFFI) + rmcp MCP server + headless CLI, all driving the timeline-core command bus."
+
+# The headless CLI is the crate's ONE default bin (the agents-render-anywhere
+# surface + acceptance backbone). The UniFFI bindgen helper is a SECOND bin,
+# kept behind required-features so default builds keep exactly one bin (DJ
+# packaging rule: a stray default bin becomes the shipped executable).
+[[bin]]
+name = "majiks-studio-cli"
+path = "src/bin/majiks_studio_cli.rs"
+required-features = ["cli"]
+
+[[bin]]
+name = "uniffi-bindgen"
+path = "src/bin/uniffi_bindgen.rs"
+required-features = ["ffi-bindgen"]
+
+[lib]
+# staticlib + cdylib for the xcframework (UniFFI), rlib so the CLI bin, the
+# MCP server, and the tests link the same crate.
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[features]
+# default = the light surface: host + generated tool registry + parity gate +
+# offline bounce + the CLI. No tokio/axum/rmcp/uniffi/reqwest, so `cargo test
+# --workspace` stays fast and the parity gate runs by default.
+default = ["cli"]
+cli = []
+mcp = ["dep:rmcp", "dep:axum", "dep:tokio", "dep:tower-service", "dep:http"]
+# copilot = Sterling, the in-app copilot: an OpenAI-compatible tool-calling loop
+# that drives the SAME command bus (via `dispatch_tool`) every other transport
+# uses. Blocking HTTP on a background thread (no tokio), so it stays a light
+# add. Run its tests with `cargo test -p agent-surface --features copilot`.
+copilot = ["dep:reqwest"]
+# The shipped app links FFI and always carries Sterling.
+ffi = ["dep:uniffi", "copilot"]
+# Pulls the uniffi CLI (clap et al.) for the bindgen helper bin only.
+ffi-bindgen = ["uniffi/cli", "ffi"]
+
+[dependencies]
+timeline-core = { path = "../timeline-core" }
+render = { path = "../render" }
+# L8 (Open in Studio): the landing pipeline's tempo/downbeat analysis is the
+# beat-tracked media crate (declared BPM is 1.2-2.9% off per P0-A, so the grid
+# must come from the audio, not the tag). `native` (default) pulls the symphonia
+# decode path; the pure tempo math is what landing uses.
+media = { path = "../media" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+blake3 = { workspace = true }
+midir = "0.9"
+
+# --- mcp feature (rmcp streamable-http server on axum, localhost, bearer PAT)
+rmcp = { version = "2.2.0", features = ["transport-streamable-http-server", "server"], optional = true }
+axum = { version = "0.8", optional = true }
+tokio = { version = "1", features = ["rt-multi-thread", "net", "sync", "macros", "time"], optional = true }
+tower-service = { version = "0.3", optional = true }
+http = { version = "1", optional = true }
+
+# --- ffi feature (Swift <-> Rust, proc-macro mode; scaffolding in lib.rs)
+uniffi = { version = "0.29", optional = true }
+
+# --- copilot feature (Sterling's chat loop): a BLOCKING client on a background
+# thread streams SSE from an OpenAI-compatible endpoint. rustls-tls so BYO
+# https endpoints work without a system OpenSSL; no tokio.
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"], optional = true }
+
+[dev-dependencies]
+tempfile = "3"
+# L13 export round-trip: read the 24-bit WAV deliverable back to null-match the
+# offline bounce and assert the bit depth.
+hound = "3.5"
+# The MCP handshake test drives the running server over real HTTP (localhost).
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "json"] }

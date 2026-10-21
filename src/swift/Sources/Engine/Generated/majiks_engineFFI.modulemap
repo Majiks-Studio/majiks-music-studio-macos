@@ -1,0 +1,7 @@
+module majiks_engineFFI {
+    header "majiks_engineFFI.h"
+    export *
+    use "Darwin"
+    use "_Builtin_stdbool"
+    use "_Builtin_stdint"
+}

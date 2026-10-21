@@ -1,0 +1,10 @@
+{
+  "files": {
+    "click_120bpm_48k_stereo.wav": "cb7f32883d5bb5575a38d4094af0ff79f457bb3cec757adac9286a9011189c14",
+    "click_174bpm_48k_stereo.wav": "c8cf813cc91bc976504091603518b86b3895ab8d45b8b015fdafec2d24ebf202",
+    "click_92bpm_48k_stereo.wav": "c7d2db3dd67f260d6f79aa6247cdf2c4fc558e21a875e495ac470377c50b8602",
+    "sweep_44k1_stereo.wav": "5864592199deb01596acc868ac8b7761255e14d81cf32882da830b9336e2fc63",
+    "sweep_48k_stereo.wav": "cd8810b5164d2f71b946619a6daedb8652ef9fdd6618db518a48c6478ebe8ab1",
+    "tone_440_48k_mono.wav": "f77acae4c776515d885cc61ded8d21f09fce305f94b04bb4b8b6102b6395c331"
+  }
+}

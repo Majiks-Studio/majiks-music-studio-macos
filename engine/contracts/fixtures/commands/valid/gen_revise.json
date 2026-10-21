@@ -1,0 +1,25 @@
+{
+  "id": "600000000000000000000001YQ",
+  "ts": "2026-07-11T20:04:11Z",
+  "actor": {
+    "kind": "user",
+    "name": "aaron"
+  },
+  "name": "gen.revise",
+  "params": {
+    "requestId": "500000000000000000000008S9",
+    "clipId": "clip_drums_1",
+    "regionStartTicks": 3840,
+    "regionEndTicks": 5760,
+    "scope": "drums",
+    "request": {
+      "instruction": "bigger, more aggressive drums in this section",
+      "variants": 2
+    }
+  },
+  "inverse": null,
+  "result": {
+    "ok": true
+  },
+  "hash": "e99825ded168083ef7bdd532d322a6968cfe5d3306d7fc1ebf7040a759faa56d"
+}

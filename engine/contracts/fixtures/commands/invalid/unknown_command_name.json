@@ -1,0 +1,17 @@
+{
+  "id": "400000000000000000000002XS",
+  "ts": "2026-07-11T20:04:11Z",
+  "actor": {
+    "kind": "user",
+    "name": "aaron"
+  },
+  "name": "clip.telekinesis",
+  "params": {
+    "clipId": "clip_drums_1"
+  },
+  "inverse": null,
+  "result": {
+    "ok": true
+  },
+  "hash": "3614bf4fe939c981f7c699fba18d134b558748b120f6039b550871fd321004a1"
+}

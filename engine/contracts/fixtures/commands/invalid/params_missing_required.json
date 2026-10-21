@@ -1,0 +1,25 @@
+{
+  "id": "500000000000000000000002Y0",
+  "ts": "2026-07-11T20:04:11Z",
+  "actor": {
+    "kind": "user",
+    "name": "aaron"
+  },
+  "name": "clip.move",
+  "params": {
+    "trackId": "trk_drums",
+    "startTicks": 960
+  },
+  "inverse": {
+    "name": "clip.move",
+    "params": {
+      "clipId": "clip_drums_1",
+      "trackId": "trk_drums",
+      "startTicks": 0
+    }
+  },
+  "result": {
+    "ok": true
+  },
+  "hash": "4b2ae5f7d74a988f245c65e1dbc9ad2358927ddc0b7d6d2049db02d063fef0a6"
+}

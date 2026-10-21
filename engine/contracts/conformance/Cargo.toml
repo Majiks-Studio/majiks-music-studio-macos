@@ -1,0 +1,33 @@
+# Member of ../../Cargo.toml (folded into the workspace at Phase 1 integration).
+[package]
+name = "contracts-conformance"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Schema + hash-chain conformance tests for engine/contracts/ fixtures. No engine behavior lives here."
+
+[dependencies]
+# default-features=false drops the jsonschema crate's resolve-http feature
+# (pulls in reqwest/hyper/tower otherwise): every schema this crate validates
+# against is a local in-memory document with only same-document ("#/...")
+# $refs, so no HTTP/file resolver is needed.
+jsonschema = { version = "0.26", default-features = false }
+# float_roundtrip is REQUIRED, not optional, now that catalog v2 pins the float
+# canonicalization rule (deferred proposal 1). serde_json's DEFAULT float parser
+# is not the exact inverse of its ryu-based serializer: it can misround a
+# shortest-round-trip decimal by 1 ULP, so this crate would recompute a
+# different hash for a Python-generated entry carrying e.g. a measured BPM of
+# 120.00000000000003. `cargo test --workspace` masked it, because feature
+# unification borrowed the flag from timeline-core's declaration; `cargo test -p
+# contracts-conformance` on its own did not. Declared here so this crate is
+# correct standalone. (See the workspace Cargo.toml for the full write-up, and
+# fixtures/project/float-journal.jsonl for the regression.)
+serde_json = { version = "1", features = ["float_roundtrip"] }
+blake3 = "1"
+
+[lib]
+name = "contracts_conformance"
+path = "src/lib.rs"
+
+[dev-dependencies]
+proptest = "1"

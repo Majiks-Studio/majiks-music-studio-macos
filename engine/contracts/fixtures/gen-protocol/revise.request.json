@@ -1,0 +1,10 @@
+{
+  "requestId": "400000000000000000000008WE",
+  "sourceAudioRef": "clip_drums_1",
+  "regionStartSeconds": 4,
+  "regionEndSeconds": 6,
+  "instruction": "bigger, more aggressive drums in this section",
+  "scope": "drums",
+  "seed": 7,
+  "variants": 1
+}

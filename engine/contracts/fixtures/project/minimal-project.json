@@ -1,0 +1,115 @@
+{
+  "formatVersion": 1,
+  "projectId": "00000000000000000000000001",
+  "name": "Late Night Drive",
+  "tempo": {
+    "bpm": 92
+  },
+  "timeSig": {
+    "numerator": 4,
+    "denominator": 4
+  },
+  "sampleRateHz": 48000,
+  "ppq": 960,
+  "sections": [
+    {
+      "sectionId": "sec_intro",
+      "name": "Intro",
+      "startTicks": 0
+    },
+    {
+      "sectionId": "sec_verse",
+      "name": "Verse",
+      "startTicks": 7680
+    }
+  ],
+  "markers": [
+    {
+      "markerId": "mk_1",
+      "positionTicks": 3840,
+      "label": "drop candidate"
+    }
+  ],
+  "tracks": [
+    {
+      "trackId": "trk_drums",
+      "name": "Drums",
+      "index": 0,
+      "color": "#E05252",
+      "muted": false,
+      "soloed": false,
+      "gainDb": -2,
+      "pan": 0
+    },
+    {
+      "trackId": "trk_bass",
+      "name": "Bass",
+      "index": 1,
+      "color": "#4C7CE0",
+      "muted": false,
+      "soloed": false,
+      "gainDb": 0,
+      "pan": 0,
+      "automation": {
+        "volume": [
+          {
+            "pointId": "ap_1",
+            "positionTicks": 0,
+            "value": 0
+          },
+          {
+            "pointId": "ap_2",
+            "positionTicks": 2880,
+            "value": -6
+          }
+        ]
+      }
+    },
+    {
+      "trackId": "trk_synth",
+      "name": "Synth",
+      "index": 2,
+      "muted": false,
+      "soloed": false,
+      "gainDb": 0,
+      "pan": 1,
+      "sends": {
+        "a": 1
+      }
+    }
+  ],
+  "clips": [
+    {
+      "clipId": "clip_drums_1",
+      "trackId": "trk_drums",
+      "assetHash": "fde5e4e2957eecde92b5cd43a763a0a500192f15da147caf9f45f7b012a1c84c",
+      "startTicks": 960,
+      "lengthTicks": 6720,
+      "gainDb": -3,
+      "fadeIn": {
+        "lengthTicks": 240,
+        "shape": "linear"
+      }
+    },
+    {
+      "clipId": "clip_bass_1",
+      "trackId": "trk_bass",
+      "assetHash": "4d20a815e392729394bdab8b85074b466af384e0374d21cd4720d575ac74610d",
+      "startTicks": 1920,
+      "lengthTicks": 7680
+    }
+  ],
+  "masterBus": {
+    "gainDb": 0,
+    "limiter": {
+      "enabled": false
+    }
+  },
+  "journal": {
+    "entryCount": 30,
+    "tipId": "30000000000000000000000106",
+    "tipHash": "8cf75844f07da91612a0f094dc4d2639755565c630680aa386b58daf5d2bf1bb",
+    "genesisHash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "checkpointedAt": "2026-07-11T20:06:36Z"
+  }
+}

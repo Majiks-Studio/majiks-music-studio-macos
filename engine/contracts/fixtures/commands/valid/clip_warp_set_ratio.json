@@ -1,0 +1,26 @@
+{
+  "id": "600000000000000000000001YM",
+  "ts": "2026-07-11T20:04:11Z",
+  "actor": {
+    "kind": "user",
+    "name": "aaron"
+  },
+  "name": "clip.warp.set",
+  "params": {
+    "clipId": "clip_bass_1",
+    "mode": "ratio",
+    "stretchRatio": 1
+  },
+  "inverse": {
+    "name": "clip.warp.set",
+    "params": {
+      "clipId": "clip_bass_1",
+      "mode": "ratio",
+      "stretchRatio": 1
+    }
+  },
+  "result": {
+    "ok": true
+  },
+  "hash": "69e1ef602460e1d70bd9ef8b476c8d542c16892e60a11a35a3b388fd1a68f0cc"
+}

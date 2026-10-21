@@ -1,0 +1,132 @@
+{
+  "timestamp": "2026-02-15T11:42:29.532625",
+  "summary": {
+    "total": 24,
+    "passed": 24,
+    "failed": 0,
+    "warnings": 0,
+    "success": true
+  },
+  "details": [
+    {
+      "status": "PASS",
+      "test": "Dependencies",
+      "message": "numpy available for test audio generation"
+    },
+    {
+      "status": "PASS",
+      "test": "WAV creation",
+      "message": "Created 3-second test WAV file"
+    },
+    {
+      "status": "PASS",
+      "test": "WAV properties",
+      "message": "Correct format: 1ch, 16bit, 44100Hz"
+    },
+    {
+      "status": "PASS",
+      "test": "WAV duration",
+      "message": "Duration: 3.00s"
+    },
+    {
+      "status": "PASS",
+      "test": "WAV export",
+      "message": "Exact copy preserves all data"
+    },
+    {
+      "status": "PASS",
+      "test": "ffmpeg detection",
+      "message": "Found at: /opt/homebrew/bin/ffmpeg"
+    },
+    {
+      "status": "PASS",
+      "test": "FLAC export",
+      "message": "Successfully converted WAV to FLAC"
+    },
+    {
+      "status": "PASS",
+      "test": "FLAC compression",
+      "message": "Compressed to 22.7% of WAV size"
+    },
+    {
+      "status": "PASS",
+      "test": "FLAC lossless",
+      "message": "Decoded audio matches source exactly"
+    },
+    {
+      "status": "PASS",
+      "test": "MP3 export 192k",
+      "message": "Successfully converted WAV to MP3"
+    },
+    {
+      "status": "PASS",
+      "test": "MP3 export 320k",
+      "message": "Successfully exported at max quality"
+    },
+    {
+      "status": "PASS",
+      "test": "MP3 bitrate scaling",
+      "message": "320k (402328B) > 192k (241414B)"
+    },
+    {
+      "status": "PASS",
+      "test": "MP3 compression",
+      "message": "Compressed to 72.6% smaller than WAV"
+    },
+    {
+      "status": "PASS",
+      "test": "MP3 validation 192k",
+      "message": "File is valid and playable"
+    },
+    {
+      "status": "PASS",
+      "test": "MP3 validation 320k",
+      "message": "File is valid and playable"
+    },
+    {
+      "status": "PASS",
+      "test": "M4A export",
+      "message": "Successfully converted WAV to M4A/AAC"
+    },
+    {
+      "status": "PASS",
+      "test": "M4A compression",
+      "message": "Compressed to 79.2% smaller than WAV"
+    },
+    {
+      "status": "PASS",
+      "test": "M4A bitrate scaling",
+      "message": "256k (147353B) > 192k (147094B)"
+    },
+    {
+      "status": "PASS",
+      "test": "ffmpeg version",
+      "message": "ffmpeg version 8.0.1 Copyright (c) 2000-2025 the FFmpeg deve"
+    },
+    {
+      "status": "PASS",
+      "test": "Codec: flac",
+      "message": "FLAC lossless available"
+    },
+    {
+      "status": "PASS",
+      "test": "Codec: libmp3lame",
+      "message": "MP3 encoder available"
+    },
+    {
+      "status": "PASS",
+      "test": "Codec: aac",
+      "message": "AAC/M4A encoder available"
+    },
+    {
+      "status": "PASS",
+      "test": "Batch source creation",
+      "message": "Created 3 test files"
+    },
+    {
+      "status": "PASS",
+      "test": "Batch export",
+      "message": "Successfully exported all 3 tracks"
+    }
+  ]
+}

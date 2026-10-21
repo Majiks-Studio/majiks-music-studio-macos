@@ -1,0 +1,1443 @@
+{
+  "catalogVersion": 1,
+  "generatedFrom": "02-ARCHITECTURE.md section 4 (v1 program, 2026-07-11), majiks-music-studio-pro@1869a5e",
+  "commands": [
+    {
+      "name": "project.new",
+      "category": "project",
+      "journaled": false,
+      "undoable": false,
+      "nonUndoableReason": "Lifecycle action that creates the .mstudio package; there is no prior project state to invert into. Runs through the command bus for uniform UI/MCP/agent access but is not a journal entry.",
+      "inverseRule": { "mode": "none" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["name"],
+        "properties": { "name": { "type": "string", "minLength": 1 } },
+        "additionalProperties": false
+      },
+      "description": "Create a new .mstudio package on disk with an empty timeline. Initial tempo/timeSig/key are set by follow-up project.setTempo/setTimeSig/setKey commands so those mutations are uniformly journaled."
+    },
+    {
+      "name": "project.open",
+      "category": "project",
+      "journaled": false,
+      "undoable": false,
+      "nonUndoableReason": "Session action (loads a package into memory); does not mutate project content.",
+      "inverseRule": { "mode": "none" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["path"],
+        "properties": { "path": { "type": "string", "minLength": 1 } },
+        "additionalProperties": false
+      },
+      "description": "Open an existing .mstudio package: read project.json (checkpoint), replay any journal segment newer than the checkpoint, and hydrate the in-memory model."
+    },
+    {
+      "name": "project.save",
+      "category": "project",
+      "journaled": false,
+      "undoable": false,
+      "nonUndoableReason": "Checkpoint action, not a content mutation. Its effect is the project.json-checkpoint-plus-journal-truncation-marker sequence described in 02-ARCHITECTURE.md section 6, which is orthogonal to the per-edit journal this schema validates.",
+      "inverseRule": { "mode": "none" },
+      "paramsSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "description": "Write project.json as a checkpoint of the current journal tip and mark prior journal segments eligible for truncation once the write is durable."
+    },
+    {
+      "name": "project.setTempo",
+      "category": "project",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "self" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["bpm"],
+        "properties": { "bpm": { "type": "number", "exclusiveMinimum": 0, "maximum": 999 } },
+        "additionalProperties": false
+      },
+      "description": "Set the project's global tempo in beats per minute. v1 has one tempo for the whole project (no tempo map / tempo automation)."
+    },
+    {
+      "name": "project.setTimeSig",
+      "category": "project",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "self" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["numerator", "denominator"],
+        "properties": {
+          "numerator": { "type": "integer", "minimum": 1, "maximum": 32 },
+          "denominator": { "type": "integer", "enum": [1, 2, 4, 8, 16, 32] }
+        },
+        "additionalProperties": false
+      },
+      "description": "Set the project's global time signature, e.g. 4/4 or 6/8."
+    },
+    {
+      "name": "project.setKey",
+      "category": "project",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "self" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["key"],
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[A-G](#|b)? (major|minor)$",
+            "description": "Matches the keyscale vocabulary already used by ace_generator.py (e.g. 'C major', 'A minor')."
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Set the project's key/scale metadata (informational for v1; not enforced against note content)."
+    },
+    {
+      "name": "section.set",
+      "category": "project",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": {
+        "mode": "explicit",
+        "name": "section.remove"
+      },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["sectionId", "name", "startTicks"],
+        "properties": {
+          "sectionId": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1, "description": "e.g. Verse, Chorus, Bridge, Drop." },
+          "startTicks": { "type": "integer", "minimum": 0 },
+          "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" }
+        },
+        "additionalProperties": false
+      },
+      "description": "Create or update a named arrangement section marker. Catalog default inverse is section.remove (correct for the create case); when section.set updates an EXISTING sectionId's fields, the runtime executor uses a self-inverse (section.set with the prior name/startTicks/color) instead. See engine/contracts/README.md open question: this is an upsert command with a context-dependent inverse, which a static per-command inverseRule cannot fully express."
+    },
+    {
+      "name": "section.remove",
+      "category": "project",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "explicit", "name": "section.set" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["sectionId"],
+        "properties": { "sectionId": { "type": "string", "minLength": 1 } },
+        "additionalProperties": false
+      },
+      "description": "Remove an arrangement section marker."
+    },
+    {
+      "name": "marker.set",
+      "category": "project",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": {
+        "mode": "explicit",
+        "name": "marker.remove"
+      },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["markerId", "positionTicks", "label"],
+        "properties": {
+          "markerId": { "type": "string", "minLength": 1 },
+          "positionTicks": { "type": "integer", "minimum": 0 },
+          "label": { "type": "string", "minLength": 1 },
+          "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" }
+        },
+        "additionalProperties": false
+      },
+      "description": "Create or update a timeline marker. Catalog default inverse is marker.remove (correct for the create case; P0-C proposal 1, APPROVED by the coordinating session 2026-07-11, mirroring section.set/section.remove); when marker.set updates an EXISTING markerId's fields, the runtime executor uses a self-inverse (marker.set with the prior positionTicks/label/color) instead, the same upsert nuance as section.set."
+    },
+    {
+      "name": "marker.remove",
+      "category": "project",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "explicit", "name": "marker.set" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["markerId"],
+        "properties": { "markerId": { "type": "string", "minLength": 1 } },
+        "additionalProperties": false
+      },
+      "description": "Remove a timeline marker. Added as marker.set's undo-completing counterpart (P0-C proposal 1, APPROVED by the coordinating session 2026-07-11), mirroring section.remove."
+    },
+
+    {
+      "name": "transport.play",
+      "category": "transport",
+      "journaled": false,
+      "undoable": false,
+      "inverseRule": { "mode": "none" },
+      "paramsSchema": { "type": "object", "properties": {}, "additionalProperties": false },
+      "description": "Start playback from the current transport position. Unjournaled per 02-ARCH section 4: transport commands are real commands on the bus but never appear in journal.jsonl."
+    },
+    {
+      "name": "transport.stop",
+      "category": "transport",
+      "journaled": false,
+      "undoable": false,
+      "inverseRule": { "mode": "none" },
+      "paramsSchema": { "type": "object", "properties": {}, "additionalProperties": false },
+      "description": "Stop playback."
+    },
+    {
+      "name": "transport.seek",
+      "category": "transport",
+      "journaled": false,
+      "undoable": false,
+      "inverseRule": { "mode": "none" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["positionTicks"],
+        "properties": { "positionTicks": { "type": "integer", "minimum": 0 } },
+        "additionalProperties": false
+      },
+      "description": "Move the transport playhead to an absolute tick position."
+    },
+    {
+      "name": "transport.loop.set",
+      "category": "transport",
+      "journaled": false,
+      "undoable": false,
+      "inverseRule": { "mode": "none" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["startTicks", "endTicks"],
+        "properties": {
+          "startTicks": { "type": "integer", "minimum": 0 },
+          "endTicks": { "type": "integer", "minimum": 0 }
+        },
+        "additionalProperties": false
+      },
+      "description": "Set the transport loop region."
+    },
+    {
+      "name": "transport.loop.clear",
+      "category": "transport",
+      "journaled": false,
+      "undoable": false,
+      "inverseRule": { "mode": "none" },
+      "paramsSchema": { "type": "object", "properties": {}, "additionalProperties": false },
+      "description": "Clear the transport loop region."
+    },
+    {
+      "name": "transport.metronome",
+      "category": "transport",
+      "journaled": false,
+      "undoable": false,
+      "inverseRule": { "mode": "none" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["enabled"],
+        "properties": { "enabled": { "type": "boolean" } },
+        "additionalProperties": false
+      },
+      "description": "Toggle the metronome click. v1 metronome is a simple click, no accent patterns or sound choices."
+    },
+
+    {
+      "name": "track.add",
+      "category": "track",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "explicit", "name": "track.remove" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["trackId", "name"],
+        "properties": {
+          "trackId": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "index": { "type": "integer", "minimum": 0 }
+        },
+        "additionalProperties": false
+      },
+      "description": "Add a new track. index is optional (append if omitted)."
+    },
+    {
+      "name": "track.remove",
+      "category": "track",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "explicit", "name": "track.add" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["trackId"],
+        "properties": { "trackId": { "type": "string", "minLength": 1 } },
+        "additionalProperties": false
+      },
+      "description": "Remove a track and every clip placed on it."
+    },
+    {
+      "name": "track.rename",
+      "category": "track",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "self" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["trackId", "name"],
+        "properties": {
+          "trackId": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      },
+      "description": "Rename a track."
+    },
+    {
+      "name": "track.reorder",
+      "category": "track",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "self" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["trackId", "newIndex"],
+        "properties": {
+          "trackId": { "type": "string", "minLength": 1 },
+          "newIndex": { "type": "integer", "minimum": 0 }
+        },
+        "additionalProperties": false
+      },
+      "description": "Move a track to a new position in the track list."
+    },
+    {
+      "name": "track.setColor",
+      "category": "track",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "self" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["trackId", "color"],
+        "properties": {
+          "trackId": { "type": "string", "minLength": 1 },
+          "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" }
+        },
+        "additionalProperties": false
+      },
+      "description": "Set a track's display color."
+    },
+    {
+      "name": "track.setHeight",
+      "category": "track",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "self" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["trackId", "heightPx"],
+        "properties": {
+          "trackId": { "type": "string", "minLength": 1 },
+          "heightPx": { "type": "integer", "minimum": 24, "maximum": 400 }
+        },
+        "additionalProperties": false
+      },
+      "description": "Set a track's lane height in the timeline canvas."
+    },
+    {
+      "name": "track.mute",
+      "category": "track",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "self" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["trackId", "muted"],
+        "properties": {
+          "trackId": { "type": "string", "minLength": 1 },
+          "muted": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      },
+      "description": "Mute or unmute a track."
+    },
+    {
+      "name": "track.solo",
+      "category": "track",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "self" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["trackId", "soloed"],
+        "properties": {
+          "trackId": { "type": "string", "minLength": 1 },
+          "soloed": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      },
+      "description": "Solo or unsolo a track."
+    },
+    {
+      "name": "track.arm",
+      "category": "track",
+      "journaled": true,
+      "undoable": true,
+      "flag": "L19",
+      "inverseRule": { "mode": "self" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["trackId", "armed"],
+        "properties": {
+          "trackId": { "type": "string", "minLength": 1 },
+          "armed": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      },
+      "description": "Arm or disarm a track for recording. Flag-gated: ships with lane L19 (recording), not v1 launch."
+    },
+
+    {
+      "name": "clip.place",
+      "category": "clip",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "explicit", "name": "clip.remove" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["clipId", "trackId", "assetHash", "startTicks", "lengthTicks"],
+        "properties": {
+          "clipId": { "type": "string", "minLength": 1 },
+          "trackId": { "type": "string", "minLength": 1 },
+          "assetHash": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "blake3 of the audio asset under audio/, per section 6." },
+          "startTicks": { "type": "integer", "minimum": 0 },
+          "lengthTicks": { "type": "integer", "exclusiveMinimum": 0 },
+          "sourceOffsetTicks": { "type": "integer", "minimum": 0, "default": 0 }
+        },
+        "additionalProperties": false
+      },
+      "description": "Place a clip referencing a content-addressed audio asset onto a track at a given position."
+    },
+    {
+      "name": "clip.move",
+      "category": "clip",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "self" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["clipId", "trackId", "startTicks"],
+        "properties": {
+          "clipId": { "type": "string", "minLength": 1 },
+          "trackId": { "type": "string", "minLength": 1, "description": "Destination track; equal to the clip's current track for a same-lane move." },
+          "startTicks": { "type": "integer", "minimum": 0 }
+        },
+        "additionalProperties": false
+      },
+      "description": "Move a clip to a new start position, optionally onto a different track. This is the exact command shown as the worked example in 02-ARCHITECTURE.md section 4."
+    },
+    {
+      "name": "clip.trim",
+      "category": "clip",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "self" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["clipId", "edge", "deltaTicks"],
+        "properties": {
+          "clipId": { "type": "string", "minLength": 1 },
+          "edge": { "type": "string", "enum": ["start", "end"] },
+          "deltaTicks": { "type": "integer", "description": "Signed; positive shortens from the start edge or lengthens from the end edge." }
+        },
+        "additionalProperties": false
+      },
+      "description": "Trim a clip's start or end edge."
+    },
+    {
+      "name": "clip.split",
+      "category": "clip",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "self" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["clipId", "atTicks", "newClipId"],
+        "properties": {
+          "clipId": { "type": "string", "minLength": 1 },
+          "atTicks": { "type": "integer", "minimum": 0 },
+          "newClipId": { "type": "string", "minLength": 1, "description": "Id assigned to the right-hand piece created by the split." }
+        },
+        "additionalProperties": false
+      },
+      "description": "Split a clip into two clips at a tick position."
+    },
+    {
+      "name": "clip.duplicate",
+      "category": "clip",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "explicit", "name": "clip.remove" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["clipId", "newClipId", "startTicks"],
+        "properties": {
+          "clipId": { "type": "string", "minLength": 1 },
+          "newClipId": { "type": "string", "minLength": 1 },
+          "startTicks": { "type": "integer", "minimum": 0 }
+        },
+        "additionalProperties": false
+      },
+      "description": "Duplicate a clip onto the same or another track at a given position."
+    },
+    {
+      "name": "clip.remove",
+      "category": "clip",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "explicit", "name": "clip.place" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["clipId"],
+        "properties": { "clipId": { "type": "string", "minLength": 1 } },
+        "additionalProperties": false
+      },
+      "description": "Remove a clip from the timeline. The underlying audio asset is not deleted (content-addressed, may be referenced elsewhere)."
+    },
+    {
+      "name": "clip.setGain",
+      "category": "clip",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "self" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["clipId", "gainDb"],
+        "properties": {
+          "clipId": { "type": "string", "minLength": 1 },
+          "gainDb": { "type": "number", "minimum": -60, "maximum": 12 }
+        },
+        "additionalProperties": false
+      },
+      "description": "Set a clip's gain trim, independent of the track's mixer gain."
+    },
+    {
+      "name": "clip.mute",
+      "category": "clip",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "self" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["clipId", "muted"],
+        "properties": {
+          "clipId": { "type": "string", "minLength": 1 },
+          "muted": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      },
+      "description": "Mute or unmute an individual clip."
+    },
+    {
+      "name": "clip.fade.set",
+      "category": "clip",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "self" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["clipId", "edge", "lengthTicks", "shape"],
+        "properties": {
+          "clipId": { "type": "string", "minLength": 1 },
+          "edge": { "type": "string", "enum": ["in", "out"] },
+          "lengthTicks": { "type": "integer", "minimum": 0, "description": "Not named explicitly in 02-ARCH section 4's one-line description (in/out, shape); required for the command to be executable, added here." },
+          "shape": { "type": "string", "enum": ["linear", "equalPower", "exponential", "logarithmic"] }
+        },
+        "additionalProperties": false
+      },
+      "description": "Set a clip's fade-in or fade-out."
+    },
+    {
+      "name": "clip.crossfade.set",
+      "category": "clip",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "self" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["clipIdA", "clipIdB", "lengthTicks"],
+        "properties": {
+          "clipIdA": { "type": "string", "minLength": 1 },
+          "clipIdB": { "type": "string", "minLength": 1 },
+          "lengthTicks": { "type": "integer", "exclusiveMinimum": 0 },
+          "shape": { "type": "string", "enum": ["linear", "equalPower", "exponential", "logarithmic"], "default": "equalPower" }
+        },
+        "additionalProperties": false
+      },
+      "description": "Set a crossfade between two adjacent clips on the same track."
+    },
+    {
+      "name": "clip.warp.set",
+      "category": "clip",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "self" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["clipId", "mode"],
+        "properties": {
+          "clipId": { "type": "string", "minLength": 1 },
+          "mode": { "type": "string", "enum": ["ratio", "conform"] },
+          "stretchRatio": { "type": "number", "exclusiveMinimum": 0, "description": "Required when mode is 'ratio'; 1.0 is unwarped." }
+        },
+        "additionalProperties": false,
+        "if": { "properties": { "mode": { "const": "ratio" } } },
+        "then": { "required": ["clipId", "mode", "stretchRatio"] }
+      },
+      "description": "Set a clip's time-warp: a fixed stretch ratio, or conform to the project tempo."
+    },
+    {
+      "name": "clip.rename",
+      "category": "clip",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "self" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["clipId", "name"],
+        "properties": {
+          "clipId": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      },
+      "description": "Rename a clip's display label."
+    },
+
+    {
+      "name": "autolane.show",
+      "category": "automation",
+      "journaled": false,
+      "undoable": false,
+      "nonUndoableReason": "View-state toggle (whether an automation lane is expanded under a track), not a content mutation.",
+      "inverseRule": { "mode": "none" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["trackId", "target", "visible"],
+        "properties": {
+          "trackId": { "type": "string", "minLength": 1 },
+          "target": { "type": "string", "enum": ["track.volume", "track.pan"] },
+          "visible": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      },
+      "description": "Show or hide an automation lane in the timeline UI."
+    },
+    {
+      "name": "autopoint.add",
+      "category": "automation",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "explicit", "name": "autopoint.remove" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["trackId", "target", "pointId", "positionTicks", "value"],
+        "properties": {
+          "trackId": { "type": "string", "minLength": 1 },
+          "target": { "type": "string", "enum": ["track.volume", "track.pan"] },
+          "pointId": { "type": "string", "minLength": 1 },
+          "positionTicks": { "type": "integer", "minimum": 0 },
+          "value": { "type": "number", "description": "track.volume: dB. track.pan: -1..1." }
+        },
+        "additionalProperties": false
+      },
+      "description": "Add an automation point on a track parameter lane. v1 automation targets are track.volume and track.pan only."
+    },
+    {
+      "name": "autopoint.move",
+      "category": "automation",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "self" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["trackId", "target", "pointId", "positionTicks", "value"],
+        "properties": {
+          "trackId": { "type": "string", "minLength": 1 },
+          "target": { "type": "string", "enum": ["track.volume", "track.pan"] },
+          "pointId": { "type": "string", "minLength": 1 },
+          "positionTicks": { "type": "integer", "minimum": 0 },
+          "value": { "type": "number" }
+        },
+        "additionalProperties": false
+      },
+      "description": "Move an existing automation point to a new position and/or value."
+    },
+    {
+      "name": "autopoint.remove",
+      "category": "automation",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "explicit", "name": "autopoint.add" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["trackId", "target", "pointId"],
+        "properties": {
+          "trackId": { "type": "string", "minLength": 1 },
+          "target": { "type": "string", "enum": ["track.volume", "track.pan"] },
+          "pointId": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      },
+      "description": "Remove an automation point."
+    },
+    {
+      "name": "autolane.clear",
+      "category": "automation",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "self" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["trackId", "target"],
+        "properties": {
+          "trackId": { "type": "string", "minLength": 1 },
+          "target": { "type": "string", "enum": ["track.volume", "track.pan"] }
+        },
+        "additionalProperties": false
+      },
+      "description": "Remove every automation point on a lane. Undo restores the full prior point set (runtime snapshot, not expressed field-by-field in this schema)."
+    },
+
+    {
+      "name": "mix.gain",
+      "category": "mixer",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "self" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["trackId", "gainDb"],
+        "properties": {
+          "trackId": { "type": "string", "minLength": 1 },
+          "gainDb": { "type": "number", "minimum": -60, "maximum": 12 }
+        },
+        "additionalProperties": false
+      },
+      "description": "Set a track's mixer channel gain (distinct from clip.setGain, which trims an individual clip)."
+    },
+    {
+      "name": "mix.pan",
+      "category": "mixer",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "self" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["trackId", "pan"],
+        "properties": {
+          "trackId": { "type": "string", "minLength": 1 },
+          "pan": { "type": "number", "minimum": -1, "maximum": 1 }
+        },
+        "additionalProperties": false
+      },
+      "description": "Set a track's mixer pan, -1 (full left) to 1 (full right)."
+    },
+    {
+      "name": "mix.eq",
+      "category": "mixer",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "self" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["trackId", "band", "freqHz", "gainDb"],
+        "properties": {
+          "trackId": { "type": "string", "minLength": 1 },
+          "band": { "type": "integer", "minimum": 0, "maximum": 3, "description": "v1 channel EQ: 4 bands, index 0-3." },
+          "freqHz": { "type": "number", "minimum": 20, "maximum": 20000 },
+          "gainDb": { "type": "number", "minimum": -24, "maximum": 24 },
+          "q": { "type": "number", "exclusiveMinimum": 0, "maximum": 10 }
+        },
+        "additionalProperties": false
+      },
+      "description": "Set one band of a track's channel EQ."
+    },
+    {
+      "name": "mix.send",
+      "category": "mixer",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "self" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["trackId", "bus", "amount"],
+        "properties": {
+          "trackId": { "type": "string", "minLength": 1 },
+          "bus": { "type": "string", "enum": ["a", "b"] },
+          "amount": { "type": "number", "minimum": 0, "maximum": 1 }
+        },
+        "additionalProperties": false
+      },
+      "description": "Set a track's send level to bus A or bus B."
+    },
+    {
+      "name": "mix.master.gain",
+      "category": "mixer",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "self" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["gainDb"],
+        "properties": { "gainDb": { "type": "number", "minimum": -60, "maximum": 12 } },
+        "additionalProperties": false
+      },
+      "description": "Set the master bus gain."
+    },
+    {
+      "name": "mix.limiter.set",
+      "category": "mixer",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "self" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["enabled"],
+        "properties": {
+          "enabled": { "type": "boolean" },
+          "ceilingDb": { "type": "number", "minimum": -6, "maximum": 0, "default": -1 },
+          "releaseMs": { "type": "number", "minimum": 1, "maximum": 1000, "default": 50 }
+        },
+        "additionalProperties": false
+      },
+      "description": "Enable/disable and configure the master limiter. mute/solo are on track.mute/track.solo, not here."
+    },
+
+    {
+      "name": "gen.song",
+      "category": "gen",
+      "journaled": true,
+      "undoable": false,
+      "async": true,
+      "nonUndoableReason": "Journals the async generation REQUEST only; it does not itself mutate the timeline. The resulting take is placed by a subsequent take.promote, which is the undoable step.",
+      "inverseRule": { "mode": "none" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["requestId", "trackId", "insertAtTicks", "request"],
+        "properties": {
+          "requestId": { "type": "string", "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$" },
+          "trackId": { "type": "string", "minLength": 1 },
+          "insertAtTicks": { "type": "integer", "minimum": 0 },
+          "request": {
+            "type": "object",
+            "required": ["caption"],
+            "properties": { "caption": { "type": "string", "minLength": 1 } },
+            "description": "Full shape is the Gen Protocol 'generate' request (gen-protocol.v1.yaml); see gen-protocol-mapping.md."
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Request a new text2music generation and stage it as a take. Gen Protocol op: generate."
+    },
+    {
+      "name": "gen.revise",
+      "category": "gen",
+      "journaled": true,
+      "undoable": false,
+      "async": true,
+      "nonUndoableReason": "Journals the async generation REQUEST only.",
+      "inverseRule": { "mode": "none" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["requestId", "clipId", "regionStartTicks", "regionEndTicks", "scope", "request"],
+        "properties": {
+          "requestId": { "type": "string", "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$" },
+          "clipId": { "type": "string", "minLength": 1 },
+          "regionStartTicks": { "type": "integer", "minimum": 0 },
+          "regionEndTicks": { "type": "integer", "minimum": 0 },
+          "scope": {
+            "type": "string",
+            "enum": ["all-stems", "vocals", "drums", "bass", "other"],
+            "description": "Per the stem-scope pipeline rule (02-ARCH section 5): scope != all-stems repaints the mix region, re-separates, splices only the scoped stem(s), and null-preserves the rest."
+          },
+          "request": {
+            "type": "object",
+            "required": ["instruction"],
+            "properties": {
+              "instruction": { "type": "string", "minLength": 1 },
+              "variants": { "type": "integer", "minimum": 1, "maximum": 5, "default": 1 }
+            },
+            "description": "Full shape is the Gen Protocol 'revise' request; see gen-protocol-mapping.md."
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Request a region repaint with an instruction delta and stage the result as a take. Gen Protocol op: revise."
+    },
+    {
+      "name": "gen.extend",
+      "category": "gen",
+      "journaled": true,
+      "undoable": false,
+      "async": true,
+      "nonUndoableReason": "Journals the async generation REQUEST only.",
+      "inverseRule": { "mode": "none" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["requestId", "clipId", "addedDurationSeconds", "request"],
+        "properties": {
+          "requestId": { "type": "string", "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$" },
+          "clipId": { "type": "string", "minLength": 1 },
+          "addedDurationSeconds": { "type": "number", "exclusiveMinimum": 0 },
+          "request": { "type": "object", "description": "Full shape is the Gen Protocol 'extend' request; see gen-protocol-mapping.md." }
+        },
+        "additionalProperties": false
+      },
+      "description": "Request that a clip's audio be continued by addedDurationSeconds and stage the result as a take. Gen Protocol op: extend."
+    },
+    {
+      "name": "gen.layer",
+      "category": "gen",
+      "journaled": true,
+      "undoable": false,
+      "async": true,
+      "nonUndoableReason": "Journals the async generation REQUEST only.",
+      "inverseRule": { "mode": "none" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["requestId", "targetTrackId", "instruction", "request"],
+        "properties": {
+          "requestId": { "type": "string", "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$" },
+          "targetTrackId": { "type": "string", "minLength": 1 },
+          "contextClipId": { "type": "string", "minLength": 1, "description": "Optional; omitted means generate the new stem without existing-audio context." },
+          "instruction": { "type": "string", "minLength": 1, "description": "e.g. 'bass', 'sax lead' (matches ace_generator.generate_lego's instruction verbatim)." },
+          "request": { "type": "object", "description": "Full shape is the Gen Protocol 'layer' request; see gen-protocol-mapping.md." }
+        },
+        "additionalProperties": false
+      },
+      "description": "Request a new stem that fits harmonically/rhythmically with existing context audio (lego mode). Gen Protocol op: layer."
+    },
+    {
+      "name": "gen.retake",
+      "category": "gen",
+      "journaled": true,
+      "undoable": false,
+      "async": true,
+      "nonUndoableReason": "Journals the async generation REQUEST only.",
+      "inverseRule": { "mode": "none" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["requestId", "sourceTakeId", "request"],
+        "properties": {
+          "requestId": { "type": "string", "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$" },
+          "sourceTakeId": { "type": "string", "minLength": 1 },
+          "request": {
+            "type": "object",
+            "description": "Full shape is the Gen Protocol 'retake' request (same prompt as sourceTakeId, a fresh seed, no instruction changes); see gen-protocol-mapping.md."
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Request a fresh-seed variation of an existing region or whole-song take, same prompt. Gen Protocol op: retake."
+    },
+    {
+      "name": "gen.autocomplete",
+      "category": "gen",
+      "journaled": true,
+      "undoable": false,
+      "async": true,
+      "flag": "v1.1",
+      "nonUndoableReason": "Journals the async generation REQUEST only.",
+      "inverseRule": { "mode": "none" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["requestId", "clipId", "request"],
+        "properties": {
+          "requestId": { "type": "string", "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$" },
+          "clipId": { "type": "string", "minLength": 1 },
+          "request": { "type": "object", "description": "Full shape is the Gen Protocol 'autocomplete' request; see gen-protocol-mapping.md." }
+        },
+        "additionalProperties": false
+      },
+      "description": "Request that missing instruments be filled in around an existing partial mix. Gen Protocol op: autocomplete. Flag v1.1."
+    },
+    {
+      "name": "gen.cover",
+      "category": "gen",
+      "journaled": true,
+      "undoable": false,
+      "async": true,
+      "flag": "v1.1",
+      "nonUndoableReason": "Journals the async generation REQUEST only.",
+      "inverseRule": { "mode": "none" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["requestId", "referenceClipId", "request"],
+        "properties": {
+          "requestId": { "type": "string", "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$" },
+          "referenceClipId": { "type": "string", "minLength": 1 },
+          "request": { "type": "object", "description": "Full shape is the Gen Protocol 'cover' request (includes coverStrength); see gen-protocol-mapping.md." }
+        },
+        "additionalProperties": false
+      },
+      "description": "Request a style-transfer cover from a reference clip. Gen Protocol op: cover. Flag v1.1."
+    },
+    {
+      "name": "gen.separate",
+      "category": "gen",
+      "journaled": true,
+      "undoable": false,
+      "async": true,
+      "nonUndoableReason": "Journals the async generation REQUEST only.",
+      "inverseRule": { "mode": "none" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["requestId", "clipId", "engine"],
+        "properties": {
+          "requestId": { "type": "string", "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$" },
+          "clipId": { "type": "string", "minLength": 1 },
+          "engine": {
+            "type": "string",
+            "enum": ["demucs", "ace-extract"],
+            "description": "demucs: htdemucs 4-stem separation (default separator). ace-extract: ACE-Step generative extraction, labeled generative in lineage, per 02-ARCH section 5."
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Request stem separation of a clip. Gen Protocol op: separate."
+    },
+    {
+      "name": "gen.cancel",
+      "category": "gen",
+      "journaled": true,
+      "undoable": false,
+      "nonUndoableReason": "Cancellation is not itself invertible.",
+      "inverseRule": { "mode": "none" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["requestId"],
+        "properties": { "requestId": { "type": "string", "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$" } },
+        "additionalProperties": false
+      },
+      "description": "Cancel an in-flight gen request. KNOWN v1 BACKEND GAP (see gen-protocol-mapping.md): the current Python backend's cancel_generation RPC is a single global cancel flag, not per-job; the Gen Protocol's per-requestId cancel is the target contract, not yet the shipped behavior."
+    },
+    {
+      "name": "gen.finalize",
+      "category": "gen",
+      "journaled": true,
+      "undoable": false,
+      "async": true,
+      "nonUndoableReason": "Journals the async re-render REQUEST only; the resulting swap is applied when gen.landed arrives.",
+      "inverseRule": { "mode": "none" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["requestId", "draftTakeId", "targetQualityRung", "request"],
+        "properties": {
+          "requestId": { "type": "string", "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$" },
+          "draftTakeId": { "type": "string", "minLength": 1, "description": "The committed draft take being re-rendered at higher quality." },
+          "targetQualityRung": {
+            "type": "string",
+            "enum": ["draft", "standard", "full"],
+            "description": "draft=acestep-v15-turbo (8 steps), standard=acestep-v15-quality (step count not yet observed in any shipped call site, see gen-protocol-mapping.md open question), full=acestep-v15-base (50 steps). finalize always targets a rung higher than the draft's own rung."
+          },
+          "request": {
+            "type": "object",
+            "description": "Same request shape as the revise op that produced draftTakeId (identical region + instruction + scope); only the model/steps rung changes. See gen-protocol-mapping.md."
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Re-render a committed draft take at full quality and splice it in place: same region, same lineage, journaled as a swap. This is the draft/commit re-render swap named in 02-ARCH section 4's gen catalog line."
+    },
+    {
+      "name": "gen.landed",
+      "category": "gen",
+      "journaled": true,
+      "undoable": false,
+      "systemAuthored": true,
+      "nonUndoableReason": "System-authored completion record of an async gen.* request; not itself a user-invocable command.",
+      "inverseRule": { "mode": "none" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["requestId", "sourceCommand", "takeId", "assetHashes", "engineIdentity"],
+        "properties": {
+          "requestId": { "type": "string", "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$", "description": "Matches the requestId of the gen.* command that started this job." },
+          "sourceCommand": { "type": "string", "pattern": "^[a-z][a-zA-Z0-9]*(\\.[a-z][a-zA-Z0-9]*)+$" },
+          "takeId": { "type": "string", "minLength": 1 },
+          "assetHashes": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+            "description": "Keys are 'mix' for a single-file take or stem names (vocals/drums/bass/other) for a per-stem take."
+          },
+          "engineIdentity": {
+            "type": "object",
+            "required": ["model", "device"],
+            "properties": {
+              "model": { "type": "string", "minLength": 1 },
+              "steps": { "type": "integer", "minimum": 1 },
+              "seed": { "type": "integer" },
+              "device": { "type": "string", "enum": ["mlx", "mps", "cuda", "cpu", "remote"] }
+            },
+            "additionalProperties": false
+          },
+          "latencySeconds": { "type": "number", "minimum": 0 }
+        },
+        "additionalProperties": false
+      },
+      "description": "Written by the engine (actor.kind=system) when any async gen.* request reaches a terminal success state. Carries the provenance the lineage tree and export manifests read: asset hashes + engine identity, per 02-ARCH section 4 ('completion journals gen.landed with asset hashes') and section 5 ('terminal ... with artifact paths + content hashes + engine identity for lineage')."
+    },
+
+    {
+      "name": "take.promote",
+      "category": "gen",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "explicit", "name": "take.discard" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["takeId", "targetClipId"],
+        "properties": {
+          "takeId": { "type": "string", "minLength": 1 },
+          "targetClipId": { "type": "string", "minLength": 1, "description": "Clip the take is spliced into; for a new gen.song this may be a clip created as part of promotion." }
+        },
+        "additionalProperties": false
+      },
+      "description": "Commit a generated take into the timeline, splicing it into (or creating) a clip. This is the undoable step that actually mutates the visible project; the gen.* request that produced the take is not itself undoable."
+    },
+    {
+      "name": "take.discard",
+      "category": "gen",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "explicit", "name": "take.promote" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["takeId"],
+        "properties": { "takeId": { "type": "string", "minLength": 1 } },
+        "additionalProperties": false
+      },
+      "description": "Discard a generated take. The take's asset stays under takes/ until the user purges it (section 6); discard only removes it from the active candidate list, so it remains reversible."
+    },
+    {
+      "name": "take.auditionMix",
+      "category": "gen",
+      "journaled": false,
+      "undoable": false,
+      "nonUndoableReason": "Preview/listening action (which per-stem take is heard while auditioning), not a committed mutation.",
+      "inverseRule": { "mode": "none" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["takeId", "stems"],
+        "properties": {
+          "takeId": { "type": "string", "minLength": 1 },
+          "stems": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "enum": ["vocals", "drums", "bass", "other", "mix"] }
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Select which stems of a per-stem take are audible while auditioning candidates, without committing anything."
+    },
+
+    {
+      "name": "import.audio",
+      "category": "io",
+      "journaled": true,
+      "undoable": true,
+      "inverseRule": { "mode": "explicit", "name": "clip.remove" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["sourcePath", "targetTrackId"],
+        "properties": {
+          "sourcePath": { "type": "string", "minLength": 1 },
+          "targetTrackId": { "type": "string", "minLength": 1 },
+          "separate": { "type": "boolean", "default": false, "description": "Run htdemucs on import and place stems as separate tracks." },
+          "conform": { "type": "boolean", "default": false, "description": "Time-stretch the imported audio to the project tempo on import." }
+        },
+        "additionalProperties": false
+      },
+      "description": "Import an external audio file, copy it content-addressed into audio/, and place it as a clip."
+    },
+    {
+      "name": "export.master",
+      "category": "io",
+      "journaled": true,
+      "undoable": false,
+      "nonUndoableReason": "Export writes a file outside the project package; it does not mutate project content. Per 02-ARCH section 4's acceptance hook, export.* is journaled (provenance: what was exported, when, from which state) but explicitly non-undoable, same as transport.",
+      "inverseRule": { "mode": "none" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["outputPath", "format"],
+        "properties": {
+          "outputPath": { "type": "string", "minLength": 1 },
+          "format": { "type": "string", "enum": ["wav", "flac", "aac"] },
+          "sampleRateHz": { "type": "integer", "enum": [44100, 48000] },
+          "loudnessTarget": { "type": "string", "enum": ["streaming", "club", "broadcast", "none"], "description": "Normalize the master to an EBU R128 integrated-LUFS target (streaming -14, club -7, broadcast -16). Omitted or 'none' writes the mix as bounced." },
+          "includeManifest": { "type": "boolean", "description": "Also write the AI-disclosure provenance manifest next to the audio (<output>.manifest.json)." }
+        },
+        "additionalProperties": false
+      },
+      "description": "Bounce the full master mix to a file, via the render graph's offline path (same graph as realtime, per 02-ARCH section 3). WAV is 24-bit at the project rate; AAC via Apple AudioToolbox. Optional loudness target + provenance manifest (L13)."
+    },
+    {
+      "name": "export.stems",
+      "category": "io",
+      "journaled": true,
+      "undoable": false,
+      "nonUndoableReason": "Export writes files outside the project package; see export.master.",
+      "inverseRule": { "mode": "none" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["outputDir", "format"],
+        "properties": {
+          "outputDir": { "type": "string", "minLength": 1 },
+          "format": { "type": "string", "enum": ["wav", "flac"] },
+          "stems": {
+            "type": "array",
+            "items": { "type": "string", "enum": ["vocals", "drums", "bass", "other"] },
+            "description": "Omitted means all 4."
+          },
+          "includeManifest": { "type": "boolean", "description": "Also write the AI-disclosure provenance manifest next to the stems (stems.manifest.json)." }
+        },
+        "additionalProperties": false
+      },
+      "description": "Bounce per-track or per-stem stems to files (24-bit WAV; not loudness-normalized). Optional provenance manifest (L13)."
+    },
+    {
+      "name": "export.region",
+      "category": "io",
+      "journaled": true,
+      "undoable": false,
+      "nonUndoableReason": "Export writes a file outside the project package; see export.master.",
+      "inverseRule": { "mode": "none" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["outputPath", "startTicks", "endTicks", "format"],
+        "properties": {
+          "outputPath": { "type": "string", "minLength": 1 },
+          "startTicks": { "type": "integer", "minimum": 0 },
+          "endTicks": { "type": "integer", "minimum": 0 },
+          "format": { "type": "string", "enum": ["wav", "flac", "aac"] },
+          "loudnessTarget": { "type": "string", "enum": ["streaming", "club", "broadcast", "none"], "description": "Normalize the region to an EBU R128 integrated-LUFS target. Omitted or 'none' writes the region as bounced." },
+          "includeManifest": { "type": "boolean", "description": "Also write the AI-disclosure provenance manifest next to the audio (<output>.manifest.json)." }
+        },
+        "additionalProperties": false
+      },
+      "description": "Bounce a time region of the master mix to a file (24-bit WAV or AAC). Optional loudness target + provenance manifest (L13)."
+    },
+    {
+      "name": "export.manifest",
+      "category": "io",
+      "journaled": true,
+      "undoable": false,
+      "nonUndoableReason": "Export writes a file outside the project package; see export.master.",
+      "inverseRule": { "mode": "none" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["outputPath"],
+        "properties": { "outputPath": { "type": "string", "minLength": 1 } },
+        "additionalProperties": false
+      },
+      "description": "Write the provenance manifest (rebuildable view over the journal, per section 6) to a standalone file."
+    },
+    {
+      "name": "publish.track",
+      "category": "io",
+      "journaled": true,
+      "undoable": false,
+      "nonUndoableReason": "Publishes to majiks.online, an external system; not a local project mutation.",
+      "inverseRule": { "mode": "none" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["assetHash", "title"],
+        "properties": {
+          "assetHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "title": { "type": "string", "minLength": 1 },
+          "metadata": { "type": "object" }
+        },
+        "additionalProperties": false
+      },
+      "description": "Publish an exported asset with provenance cert via the existing majiks.online publish path (shipped pre-Studio; params kept minimal here since the pipeline itself is out of this program's scope)."
+    },
+
+    {
+      "name": "txn.begin",
+      "category": "txn",
+      "journaled": true,
+      "undoable": false,
+      "nonUndoableReason": "Structural bracket marker, not a content mutation itself. Atomicity applies to the journaled commands between this and the matching txn.commit (02-ARCH section 4: 'Multi-op user gestures wrap in txn.begin/txn.commit (atomic undo unit)'); undoing the group is driven by walking that bracketed range, not by inverting txn.begin directly.",
+      "inverseRule": { "mode": "none" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["txnId"],
+        "properties": {
+          "txnId": { "type": "string", "minLength": 1 },
+          "reason": { "type": "string", "description": "Optional human-readable label, e.g. 'drag 3 clips'." }
+        },
+        "additionalProperties": false
+      },
+      "description": "Open an atomic transaction: journaled commands until the matching txn.commit undo/redo as one unit. v1 transactions do not nest (one open txnId at a time)."
+    },
+    {
+      "name": "txn.commit",
+      "category": "txn",
+      "journaled": true,
+      "undoable": false,
+      "nonUndoableReason": "Structural bracket marker; see txn.begin.",
+      "inverseRule": { "mode": "none" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["txnId"],
+        "properties": { "txnId": { "type": "string", "minLength": 1 } },
+        "additionalProperties": false
+      },
+      "description": "Close the atomic transaction opened by the txn.begin with the same txnId. Conformance checks that every txn.commit has a preceding, matching, not-yet-closed txn.begin."
+    },
+    {
+      "name": "studio.importStemSession",
+      "category": "session",
+      "journaled": true,
+      "undoable": true,
+      "flag": "v1.1",
+      "inverseRule": { "mode": "explicit", "name": "track.remove" },
+      "paramsSchema": {
+        "type": "object",
+        "required": ["stemSessionId"],
+        "properties": { "stemSessionId": { "type": "string", "minLength": 1 } },
+        "additionalProperties": false
+      },
+      "description": "Bring an existing Stem Sessions multitrack session onto the Studio timeline as tracks+clips. Flag v1.1; Stem Sessions itself stays untouched (02-ARCH section 1)."
+    }
+  ],
+
+  "readSurface": [
+    {
+      "name": "project.snapshot",
+      "description": "Full current project state (not a journal replay; the live in-memory model).",
+      "responseSchema": { "type": "object", "properties": {}, "additionalProperties": true }
+    },
+    {
+      "name": "track.meters",
+      "description": "Per-track live meter values (peak/RMS) for the mixer and timeline UI.",
+      "params": { "trackId": "string, optional: omit for all tracks" },
+      "responseSchema": {
+        "type": "object",
+        "required": ["tracks"],
+        "properties": {
+          "tracks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["trackId", "peakDb", "rmsDb"],
+              "properties": {
+                "trackId": { "type": "string" },
+                "peakDb": { "type": "number" },
+                "rmsDb": { "type": "number" }
+              }
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "transport.state",
+      "description": "Current transport: playing/stopped, position, loop region, metronome state.",
+      "responseSchema": {
+        "type": "object",
+        "required": ["playing", "positionTicks"],
+        "properties": {
+          "playing": { "type": "boolean" },
+          "positionTicks": { "type": "integer", "minimum": 0 },
+          "loop": { "oneOf": [{ "type": "null" }, { "type": "object" }] },
+          "metronomeEnabled": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "takes.list",
+      "description": "Candidate takes for a clip or request, for audition UI.",
+      "params": { "clipId": "string, optional", "requestId": "string, optional" },
+      "responseSchema": {
+        "type": "object",
+        "required": ["takes"],
+        "properties": {
+          "takes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["takeId", "requestId", "createdAt"],
+              "properties": {
+                "takeId": { "type": "string" },
+                "requestId": { "type": "string" },
+                "createdAt": { "type": "string" },
+                "promoted": { "type": "boolean" }
+              }
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "lineage.get",
+      "description": "Per-clip lineage tree: the chain of gen.landed / take.promote / import.audio entries that produced this clip's current audio, per 02-ARCH section 4.",
+      "params": { "clipId": "string, required" },
+      "responseSchema": {
+        "type": "object",
+        "required": ["clipId", "chain"],
+        "properties": {
+          "clipId": { "type": "string" },
+          "chain": { "type": "array", "items": { "type": "object" } }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "journal.page",
+      "description": "Paginated read of journal.jsonl entries, for provenance UI and debugging. Never used to mutate state.",
+      "params": { "afterId": "string (ulid), optional", "limit": "integer, optional, default 100" },
+      "responseSchema": {
+        "type": "object",
+        "required": ["entries"],
+        "properties": {
+          "entries": { "type": "array", "items": { "type": "object" } },
+          "nextAfterId": { "oneOf": [{ "type": "null" }, { "type": "string" }] }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "waveform.tiles",
+      "description": "Peak-tile arrays for canvas drawing at a given zoom bucket, per 02-ARCH section 3 (media crate renders tiles async; UI thread never touches raw audio).",
+      "params": { "clipId": "string, required", "zoom": "integer, required" },
+      "responseSchema": {
+        "type": "object",
+        "required": ["clipId", "zoom", "peaks"],
+        "properties": {
+          "clipId": { "type": "string" },
+          "zoom": { "type": "integer" },
+          "peaks": { "type": "array", "items": { "type": "number" } }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "engine.stats",
+      "description": "Render engine health: callback underruns and p95 latency, per the RT bars in 02-ARCH section 7.",
+      "responseSchema": {
+        "type": "object",
+        "required": ["underruns", "callbackP95Ms"],
+        "properties": {
+          "underruns": { "type": "integer", "minimum": 0 },
+          "callbackP95Ms": { "type": "number", "minimum": 0 }
+        },
+        "additionalProperties": false
+      }
+    }
+  ]
+}

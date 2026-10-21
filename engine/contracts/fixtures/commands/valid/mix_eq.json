@@ -1,0 +1,28 @@
+{
+  "id": "600000000000000000000001YP",
+  "ts": "2026-07-11T20:04:11Z",
+  "actor": {
+    "kind": "user",
+    "name": "aaron"
+  },
+  "name": "mix.eq",
+  "params": {
+    "trackId": "trk_synth",
+    "band": 1,
+    "freqHz": 2000,
+    "gainDb": -4
+  },
+  "inverse": {
+    "name": "mix.eq",
+    "params": {
+      "trackId": "trk_synth",
+      "band": 1,
+      "freqHz": 2000,
+      "gainDb": 0
+    }
+  },
+  "result": {
+    "ok": true
+  },
+  "hash": "66be8b5406f08aeab336164c27a7c53f66896b450aa722220e079342d21d3374"
+}

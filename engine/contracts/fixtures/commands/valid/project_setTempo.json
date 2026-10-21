@@ -1,0 +1,22 @@
+{
+  "id": "500000000000000000000001YH",
+  "ts": "2026-07-11T20:04:11Z",
+  "actor": {
+    "kind": "user",
+    "name": "aaron"
+  },
+  "name": "project.setTempo",
+  "params": {
+    "bpm": 128
+  },
+  "inverse": {
+    "name": "project.setTempo",
+    "params": {
+      "bpm": 92
+    }
+  },
+  "result": {
+    "ok": true
+  },
+  "hash": "b13cf50005d569ffff678e343cb107b52fc8d95c2af507588febb176553894e8"
+}

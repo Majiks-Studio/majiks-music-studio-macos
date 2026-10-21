@@ -1,0 +1,21 @@
+# ACE-Step gate. Install: see README.md. Host-specific settings go in
+# /etc/acestep-gate.env (from gate.env.example). Override User/WorkingDirectory with
+# `systemctl edit acestep-gate` rather than editing this file.
+[Unit]
+Description=ACE-Step gate (per-key auth; starts ACE-Step on demand, unloads when idle)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=acestep
+Group=acestep
+WorkingDirectory=/opt/acestep-gate
+EnvironmentFile=/etc/acestep-gate.env
+ExecStart=/bin/sh -c 'exec "$GATE_ACE_PYTHON" -m uvicorn gate:app --host "$GATE_HOST" --port "$GATE_PORT" --no-access-log'
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=90
+
+[Install]
+WantedBy=multi-user.target

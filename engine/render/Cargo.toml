@@ -1,0 +1,45 @@
+[package]
+name = "render"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Realtime render core for Majik's Music Studio: lock-free command drain, cpal io, offline bounce through the same graph, stress probe."
+
+[dependencies]
+timeline-core = { path = "../timeline-core" }
+serde.workspace = true
+serde_json.workspace = true
+cpal = "0.15"
+crossbeam-channel = "0.5"
+hound = "3.5"
+rubato = "0.15"
+blake3 = "1"
+libc = "0.2"
+# Master loudness metering (EBU R128, integrated + short-term).
+ebur128 = "0.1"
+# PRIMARY warp engine: MIT Rust bindings to Signalsmith Stretch (one-shot
+# exact() renders a whole clip buffer, latency-compensated). Verified to
+# build on this Mac (bindgen + cc). The DJ WSOLA port is the fallback and
+# the A/B baseline (crate::warp::WsolaStretcher).
+signalsmith-stretch = "0.1"
+
+# AAC export (L13): Apple AudioToolbox via ExtAudioFile FFI, per 02-ARCHITECTURE
+# ("AAC export via Apple AudioToolbox FFI, never fdk-aac / patent-grant gap").
+# Already in the workspace lock (cpal pulls it); named directly + with
+# audio_toolbox so the ExtAudioFile symbols are bound. macOS only; the encoder
+# is #[cfg(target_os = "macos")] and other targets return a typed Unsupported.
+[target.'cfg(target_os = "macos")'.dependencies]
+coreaudio-sys = { version = "0.2", default-features = false, features = ["audio_toolbox", "core_audio"] }
+
+[[bin]]
+name = "engine-proof"
+path = "src/bin/engine_proof.rs"
+
+[[bin]]
+name = "gen-fixtures"
+path = "src/bin/gen_fixtures.rs"
+
+[[bin]]
+name = "stretch-ab"
+path = "src/bin/stretch_ab.rs"

@@ -1,0 +1,19 @@
+{
+  "tracks": 32,
+  "clips": 1536,
+  "arrangement_seconds": 381.0,
+  "compile_ms": 0.070917,
+  "cull_p95_ms": 0.001625,
+  "cull_visible_clips": 0,
+  "cull_visible_clips_max": 128,
+  "render_seconds": 10.0,
+  "render_p95_ms": 0.183041,
+  "bounce_seconds": 0.151586708,
+  "bounce_realtime_ratio": 65.96884470899653,
+  "bounce_bit_identical": true,
+  "save_ms": 29.901166,
+  "load_ms": 21.013916000000002,
+  "journal_entries": 1568,
+  "journal_tip": "628c004293666a08fc36e5731c55a9e6924629d97ed23a8103dfe9ec8f4c1e31",
+  "rss_peak_bytes": 121962496
+}

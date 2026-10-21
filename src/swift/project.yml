@@ -1,0 +1,52 @@
+name: MajiksMusicStudio
+options:
+  bundleIdPrefix: com.majik
+  deploymentTarget:
+    macOS: "14.0"
+settings:
+  base:
+    DEVELOPMENT_TEAM: ""
+    SWIFT_VERSION: "6.0"
+    PRODUCT_BUNDLE_IDENTIFIER: com.majik.musicstudio
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    INFOPLIST_KEY_NSHumanReadableCopyright: ""
+    INFOPLIST_KEY_NSHighResolutionCapable: true
+    ASSETCATALOG_COMPILER_APPICON_NAME: "AppIcon"
+targets:
+  MajiksMusicStudio:
+    type: application
+    platform: macOS
+    sources:
+      # I1: Engine/ (the FFI-backed real engine) now builds; the app links
+      # MajiksEngine.xcframework (built by scripts/build-engine.sh) and the
+      # Studio tab runs on the real engine. A build that skips the framework
+      # uses the SPM path (Package.swift), which falls back to StudioMockEngine.
+      - path: Sources
+    dependencies:
+      # The static UniFFI xcframework. Not embedded (it is a static library
+      # linked into the executable). Build it first: scripts/build-engine.sh.
+      - framework: MajiksEngine.xcframework
+        embed: false
+    info:
+      path: Info.plist
+      properties:
+        CFBundleDisplayName: "Majik's Music Studio"
+        CFBundleName: "Majik's Music Studio"
+        LSApplicationCategoryType: "public.app-category.music"
+        NSHumanReadableCopyright: ""
+    settings:
+      base:
+        INFOPLIST_KEY_NSHumanReadableCopyright: ""
+        INFOPLIST_KEY_NSHighResolutionCapable: true
+        CODE_SIGN_ENTITLEMENTS: MajiksMusicStudio.entitlements
+        SWIFTUI_PREVIEW_COMPATIBILITY_VERSION: "1"
+        # I1: compile the real-engine code paths (Sources/Engine + the factory's
+        # real branch). The SPM/CI build sets this via Package.swift instead.
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) REAL_ENGINE"
+        # Find MajiksEngine.xcframework next to this project spec.
+        FRAMEWORK_SEARCH_PATHS: "$(inherited) $(PROJECT_DIR)"
+        # The Rust staticlib inside the xcframework pulls in libc++ (the
+        # signalsmith-stretch time-stretcher is C++) and the CoreAudio frameworks
+        # cpal binds. Xcode's linker does not read Rust's native-link metadata,
+        # so name them explicitly here.
+        OTHER_LDFLAGS: "$(inherited) -lc++ -framework CoreAudio -framework AudioToolbox -framework AudioUnit"

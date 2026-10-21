@@ -1,0 +1,35 @@
+[project]
+name = "majiks-music-studio"
+version = "1.5.8"
+description = "Majik's Music Studio — AI-powered music creation for macOS"
+requires-python = ">=3.11"
+dependencies = [
+    "librosa>=0.10",
+    "mutagen",
+    "numpy",
+    "scipy",
+    "soundfile",
+    "requests",
+    "huggingface-hub>=0.36,<1.0",
+]
+
+[project.optional-dependencies]
+mcp = ["mcp[cli]>=1.0"]
+test = ["pytest", "pytest-asyncio"]
+
+[project.scripts]
+majiks-music-studio-mcp = "majik_backend.mcp_server:main"
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src/python"]
+
+[tool.pytest.ini_options]
+# Keep `pytest` at the repo root scoped to the live test suite. Without this,
+# pytest walks `archive/tests` and other historical fixtures, which fail to
+# import and pollute the run.
+testpaths = ["src/python/tests"]
+pythonpath = ["src/python"]

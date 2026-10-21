@@ -1,0 +1,11 @@
+{
+  "context" : "100-clip\/8-track mock fixture, scripted pan+zoom sweep",
+  "date" : "2026-07-12T02:00:15Z",
+  "draw_cost_average_ms" : 1.9431292756911807,
+  "draw_cost_p95_ms" : 3.1192083843052387,
+  "effective_fps" : 80.273684157693879,
+  "frame_interval_average_ms" : 12.457382646541388,
+  "frame_interval_p95_ms" : 19.602666608989239,
+  "frame_interval_worst_ms" : 23.684500018134713,
+  "samples" : 643
+}

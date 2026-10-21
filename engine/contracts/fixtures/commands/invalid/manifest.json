@@ -1,0 +1,65 @@
+{
+  "count": 12,
+  "fixtures": [
+    {
+      "file": "unknown_command_name.json",
+      "reason": "name is not in command-catalog.v1.json",
+      "hint": "conformance must look up 'name' in the catalog and fail if absent; the envelope schema alone cannot catch this (it only checks the dotted-name shape)"
+    },
+    {
+      "file": "missing_required_field.json",
+      "reason": "envelope is missing required field 'params'",
+      "hint": "commandEnvelope.required"
+    },
+    {
+      "file": "bad_id_format.json",
+      "reason": "id does not match the ULID pattern",
+      "hint": "commandEnvelope.properties.id.pattern"
+    },
+    {
+      "file": "bad_hash_format.json",
+      "reason": "hash is not 64 lowercase hex characters",
+      "hint": "commandEnvelope.properties.hash.pattern"
+    },
+    {
+      "file": "bad_timestamp_format.json",
+      "reason": "ts is not a Zulu-suffixed ISO8601 timestamp",
+      "hint": "commandEnvelope.properties.ts.pattern"
+    },
+    {
+      "file": "bad_actor_kind.json",
+      "reason": "actor.kind 'robot' is not in the enum",
+      "hint": "commandEnvelope.properties.actor.properties.kind.enum"
+    },
+    {
+      "file": "params_wrong_type.json",
+      "reason": "params.startTicks is a string, clip.move's paramsSchema requires integer",
+      "hint": "catalog lookup of clip.move.paramsSchema, then params.startTicks.type"
+    },
+    {
+      "file": "params_missing_required.json",
+      "reason": "params is missing clip.move's required 'clipId'",
+      "hint": "catalog lookup of clip.move.paramsSchema, then params.required"
+    },
+    {
+      "file": "undoable_missing_inverse.json",
+      "reason": "clip.move is undoable:true in the catalog but inverse is null",
+      "hint": "catalog cross-check: undoable==true requires inverse != null"
+    },
+    {
+      "file": "nonundoable_has_inverse.json",
+      "reason": "export.master is undoable:false in the catalog but inverse is non-null",
+      "hint": "catalog cross-check: undoable==false requires inverse == null"
+    },
+    {
+      "file": "additional_properties_rejected.json",
+      "reason": "envelope has an extra top-level field not in the schema",
+      "hint": "commandEnvelope.additionalProperties"
+    },
+    {
+      "file": "result_ok_false_missing_error.json",
+      "reason": "result.ok is false but result.error is absent",
+      "hint": "resultRef.if/then: ok==false requires error"
+    }
+  ]
+}

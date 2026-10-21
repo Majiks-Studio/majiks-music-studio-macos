@@ -1,0 +1,45 @@
+name: Engine Check
+
+# Per-push guard so a mock-only DAW or stale FFI bindings can never reach main
+# and hide until a release tag. release.yml only runs on v* tags; this runs on
+# every push/PR and fails loud if the real engine does not build + link.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  real-engine-build:
+    runs-on: macos-arm64
+    # Host-mode arm64 runner on the Mac Studio. release.yml keeps `macos` on purpose: it signs and notarizes.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build the Rust engine xcframework (arm64 slice)
+        run: MAJIKS_ENGINE_ARM64_ONLY=1 ./src/swift/scripts/build-engine.sh
+
+      - name: Fail if the framework is missing (would ship the silent mock)
+        run: |
+          test -d src/swift/MajiksEngine.xcframework || {
+            echo "::error::MajiksEngine.xcframework absent — a release from here would ship StudioMockEngine (silent, no-audio DAW)."
+            exit 1
+          }
+
+      - name: Fail if committed UniFFI bindings are stale
+        run: |
+          git diff --exit-code -- src/swift/Sources/Engine/Generated/ || {
+            echo "::error::Regenerated UniFFI bindings differ from the committed ones. Run src/swift/scripts/build-engine.sh and commit src/swift/Sources/Engine/Generated/."
+            exit 1
+          }
+
+      - name: Compile the app against the REAL engine (no silent mock fallback)
+        working-directory: src/swift
+        run: MAJIKS_ENGINE=real swift build
+
+      - name: Engine tests (journal/provenance conformance + timeline/render/media)
+        working-directory: engine
+        run: cargo test --workspace

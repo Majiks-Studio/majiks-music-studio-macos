@@ -1,0 +1,57 @@
+{
+  "count": 13,
+  "fixtures": [
+    {
+      "file": "project_setTempo.json",
+      "command": "project.setTempo"
+    },
+    {
+      "file": "track_add.json",
+      "command": "track.add"
+    },
+    {
+      "file": "clip_move.json",
+      "command": "clip.move"
+    },
+    {
+      "file": "clip_warp_set_ratio.json",
+      "command": "clip.warp.set"
+    },
+    {
+      "file": "autopoint_add.json",
+      "command": "autopoint.add"
+    },
+    {
+      "file": "mix_eq.json",
+      "command": "mix.eq"
+    },
+    {
+      "file": "gen_revise.json",
+      "command": "gen.revise"
+    },
+    {
+      "file": "gen_finalize.json",
+      "command": "gen.finalize"
+    },
+    {
+      "file": "take_promote.json",
+      "command": "take.promote"
+    },
+    {
+      "file": "import_audio.json",
+      "command": "import.audio"
+    },
+    {
+      "file": "export_master.json",
+      "command": "export.master"
+    },
+    {
+      "file": "studio_importStemSession.json",
+      "command": "studio.importStemSession"
+    },
+    {
+      "file": "marker_remove.json",
+      "command": "marker.remove"
+    }
+  ]
+}

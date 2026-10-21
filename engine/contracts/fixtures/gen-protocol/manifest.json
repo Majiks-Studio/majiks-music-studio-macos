@@ -1,0 +1,20 @@
+{
+  "count": 3,
+  "pairs": [
+    {
+      "op": "generate",
+      "request": "generate.request.json",
+      "response": "generate.response.json"
+    },
+    {
+      "op": "revise",
+      "request": "revise.request.json",
+      "response": "revise.response.json"
+    },
+    {
+      "op": "analyze",
+      "request": "analyze.request.json",
+      "response": "analyze.response.json"
+    }
+  ]
+}

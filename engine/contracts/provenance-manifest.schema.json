@@ -1,0 +1,173 @@
+{
+  "description": "Majik's Music Studio provenance / AI-disclosure manifest (L13). A machine-readable view over the hash-chained command journal plus asset content hashes: the generated/imported/recorded/authored split, per-clip lineage, engine identities, the blake3 hash-chain head, and the EU AI Act Article 50(2) disclosure fields with IPTC DigitalSourceType terms. PROPOSED additive contract (does not modify a frozen contract). Written in the catalog-subset the in-repo validator (timeline_core::schema) accepts, so the engine validates its own output; it is also valid JSON Schema draft-07. COMPATIBILITY: every change to this file must keep already-exported manifests valid. The `authored` origin, the `authored*` composition fields and the optional `assetHash` are all WIDENINGS for that reason - new values were added to enums and new keys added to `properties`, but nothing was added to any `required` list and no key was removed. A manifest written before `authored` existed still validates; a manifest written today does NOT validate against an older copy of this schema, which is the accepted direction.",
+  "type": "object",
+  "required": [
+    "manifestVersion",
+    "kind",
+    "generatedAt",
+    "generator",
+    "project",
+    "hashChain",
+    "composition",
+    "aiDisclosure",
+    "clips"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "manifestVersion": { "type": "integer", "minimum": 1 },
+    "kind": { "type": "string", "const": "majiks.provenance-manifest" },
+    "generatedAt": { "type": "string", "description": "ISO-8601 timestamp of the latest journal entry (the state the manifest reflects); empty for an empty journal." },
+    "generator": {
+      "type": "object",
+      "required": ["app", "component"],
+      "additionalProperties": false,
+      "properties": {
+        "app": { "type": "string" },
+        "component": { "type": "string" }
+      }
+    },
+    "project": {
+      "type": "object",
+      "required": ["projectId", "name", "sampleRateHz", "tempoBpm", "key", "durationTicks", "durationSeconds"],
+      "additionalProperties": false,
+      "properties": {
+        "projectId": { "type": "string" },
+        "name": { "type": "string" },
+        "sampleRateHz": { "type": "integer" },
+        "tempoBpm": { "type": "number" },
+        "key": { "type": "string" },
+        "durationTicks": { "type": "integer", "minimum": 0 },
+        "durationSeconds": { "type": "number", "minimum": 0 }
+      }
+    },
+    "hashChain": {
+      "type": "object",
+      "description": "The blake3 hash-chain head. Recomputing the chain over journal.jsonl must reproduce tipHash at entryCount entries.",
+      "required": ["algorithm", "genesisHash", "tipHash", "entryCount"],
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": { "type": "string", "const": "blake3" },
+        "genesisHash": { "type": "string", "pattern": "^0{64}$" },
+        "tipHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "entryCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "composition": {
+      "type": "object",
+      "required": ["clipCount", "byClipCount", "byDuration", "durationBasis"],
+      "additionalProperties": false,
+      "properties": {
+        "clipCount": { "type": "integer", "minimum": 0 },
+        "byClipCount": {
+          "type": "object",
+          "description": "`authored` is NOT required: a manifest exported before the term existed has only the first three keys and must stay valid. The engine always writes all four.",
+          "required": ["generated", "imported", "recorded"],
+          "additionalProperties": false,
+          "properties": {
+            "generated": { "type": "integer", "minimum": 0 },
+            "imported": { "type": "integer", "minimum": 0 },
+            "recorded": { "type": "integer", "minimum": 0 },
+            "authored": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "byDuration": {
+          "type": "object",
+          "description": "`authoredTicks` / `authoredPct` are NOT required, for the same backward-compatibility reason as `byClipCount.authored`.",
+          "required": ["totalTicks", "generatedTicks", "importedTicks", "recordedTicks", "generatedPct", "importedPct", "recordedPct"],
+          "additionalProperties": false,
+          "properties": {
+            "totalTicks": { "type": "integer", "minimum": 0 },
+            "generatedTicks": { "type": "integer", "minimum": 0 },
+            "importedTicks": { "type": "integer", "minimum": 0 },
+            "recordedTicks": { "type": "integer", "minimum": 0 },
+            "authoredTicks": { "type": "integer", "minimum": 0 },
+            "generatedPct": { "type": "number", "minimum": 0, "maximum": 100 },
+            "importedPct": { "type": "number", "minimum": 0, "maximum": 100 },
+            "recordedPct": { "type": "number", "minimum": 0, "maximum": 100 },
+            "authoredPct": { "type": "number", "minimum": 0, "maximum": 100 }
+          }
+        },
+        "durationBasis": { "type": "string" }
+      }
+    },
+    "aiDisclosure": {
+      "type": "object",
+      "description": "EU AI Act Article 50(2) machine-readable disclosure. digitalSourceType is an IPTC DigitalSourceType IRI: trainedAlgorithmicMedia when all content is AI-generated, compositeWithTrainedAlgorithmicMedia when mixed, digitalCapture when no AI content is recorded.",
+      "required": ["standard", "vocabulary", "aiGenerated", "generatedFraction", "digitalSourceType", "statement", "models"],
+      "additionalProperties": false,
+      "properties": {
+        "standard": { "type": "string" },
+        "vocabulary": { "type": "string" },
+        "aiGenerated": { "type": "boolean" },
+        "generatedFraction": { "type": "number", "minimum": 0, "maximum": 1 },
+        "digitalSourceType": {
+          "type": "string",
+          "enum": [
+            "http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia",
+            "http://cv.iptc.org/newscodes/digitalsourcetype/compositeWithTrainedAlgorithmicMedia",
+            "http://cv.iptc.org/newscodes/digitalsourcetype/digitalCapture"
+          ]
+        },
+        "statement": { "type": "string" },
+        "models": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "clips": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["clipId", "trackId", "trackName", "startTicks", "lengthTicks", "durationSeconds", "origin", "digitalSourceType", "lineage"],
+        "additionalProperties": false,
+        "properties": {
+          "clipId": { "type": "string" },
+          "trackId": { "type": "string" },
+          "trackName": { "type": "string" },
+          "assetHash": {
+            "type": "string",
+            "description": "The clip's content-addressed asset hash. ABSENT when the clip has no underlying asset - a note clip is its notes, and the journal, not a file. It is deliberately not emitted as an empty string: \"\" is a claim that the hash IS the empty string, and an empty hash can only ever false-match a generative record. Not in `required` so every manifest exported before note clips existed (all of which carry it) stays valid."
+          },
+          "startTicks": { "type": "integer", "minimum": 0 },
+          "lengthTicks": { "type": "integer", "minimum": 0 },
+          "durationSeconds": { "type": "number", "minimum": 0 },
+          "origin": {
+            "type": "string",
+            "description": "generated = a music model produced this audio (a gen.landed record carries its hash). imported = audio that arrived from outside the project. recorded = captured from an input: audio via record.stop, or a MIDI take played on a controller. authored = notes written in the piano roll - no asset, no capture, no model. `authored` was added after the first manifests shipped; adding an enum value is a widening, so those manifests stay valid.",
+            "enum": ["generated", "imported", "recorded", "authored"]
+          },
+          "digitalSourceType": {
+            "type": "string",
+            "description": "IPTC DigitalSourceType IRI for THIS clip. digitalCreation (\"media created by a human using non-generative tools\") is the term for an authored note clip; digitalCapture would assert a capture device that was never involved.",
+            "enum": [
+              "http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia",
+              "http://cv.iptc.org/newscodes/digitalsourcetype/compositeWithTrainedAlgorithmicMedia",
+              "http://cv.iptc.org/newscodes/digitalsourcetype/digitalCapture",
+              "http://cv.iptc.org/newscodes/digitalsourcetype/digitalCreation"
+            ]
+          },
+          "lineage": {
+            "type": "object",
+            "description": "Per-clip chain of custody. Generated clips carry sourceCommand + requestId + engine identity (and prompt/takeId when known); imported/recorded/authored clips carry sourceCommand and, for note clips, a note naming who wrote the notes. Loose (additionalProperties) so future lineage fields are forward-compatible.",
+            "required": ["sourceCommand"],
+            "properties": {
+              "sourceCommand": { "type": "string" },
+              "requestId": { "type": "string" },
+              "takeId": { "type": "string" },
+              "prompt": { "type": "string" },
+              "declaredSource": { "type": "string" },
+              "note": { "type": "string" },
+              "engine": {
+                "type": "object",
+                "properties": {
+                  "model": { "type": "string" },
+                  "steps": { "type": "integer" },
+                  "seed": { "type": "integer" },
+                  "device": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

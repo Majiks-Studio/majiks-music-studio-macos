@@ -1,0 +1,26 @@
+{
+  "id": "600000000000000000000001YK",
+  "ts": "2026-07-11T20:04:11Z",
+  "actor": {
+    "kind": "user",
+    "name": "..."
+  },
+  "name": "clip.move",
+  "params": {
+    "clipId": "clip_drums_1",
+    "trackId": "trk_drums",
+    "startTicks": 1920
+  },
+  "inverse": {
+    "name": "clip.move",
+    "params": {
+      "clipId": "clip_drums_1",
+      "trackId": "trk_drums",
+      "startTicks": 960
+    }
+  },
+  "result": {
+    "ok": true
+  },
+  "hash": "a0cbdf3f9d48335f4286b7512eaaddefafaafdf985614d736bdf46490013e4f2"
+}
